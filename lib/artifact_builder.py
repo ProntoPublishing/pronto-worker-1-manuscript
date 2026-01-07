@@ -70,7 +70,14 @@ class ArtifactBuilder:
         processed_at = datetime.now(timezone.utc).isoformat()
         
         # Calculate word count from blocks
-        word_count = sum(len(block.get('text', '').split()) for block in blocks)
+        word_count = 0
+        for block in blocks:
+            if 'text' in block:
+                word_count += len(block['text'].split())
+            elif 'spans' in block:
+                for span in block['spans']:
+                    word_count += len(span['text'].split())
+        
         chapter_count = sum(1 for block in blocks if block.get('type') == 'chapter_heading')
         
         artifact = {
