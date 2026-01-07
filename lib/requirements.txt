@@ -1,0 +1,8 @@
+# Pronto Artifacts Registry - Shared Utilities Requirements
+# Version: 1.0.0
+
+# JSON Schema validation
+jsonschema==4.20.0
+
+# Optional: For better error messages
+attrs==23.1.0
