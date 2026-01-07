@@ -1,0 +1,470 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pronto.publishing/schemas/manuscript.v1.0.json",
+  "title": "Manuscript Artifact v1.0",
+  "description": "Canonical structured manuscript artifact produced by Worker 1 (Text Normalizer) and consumed by Worker 2 (Text Interior Producer). This artifact represents a parsed, structured manuscript with explicit warnings about edge cases.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "artifact_version",
+    "source",
+    "processing",
+    "content",
+    "analysis"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Schema version for validation. Worker 2 MUST reject artifacts with unsupported versions."
+    },
+    "artifact_type": {
+      "type": "string",
+      "const": "manuscript",
+      "description": "Artifact type identifier. MUST be 'manuscript' for this schema."
+    },
+    "artifact_version": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "Artifact version number (integer as string). Increments with each processing run."
+    },
+    "source": {
+      "type": "object",
+      "description": "Provenance information about the original input file.",
+      "required": [
+        "original_filename",
+        "original_format",
+        "original_file_size_bytes",
+        "source_hash_sha256",
+        "ingested_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "original_filename": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Original filename as provided by customer (e.g., 'my-book.docx')"
+        },
+        "original_format": {
+          "type": "string",
+          "enum": ["docx", "pdf", "txt", "md"],
+          "description": "File format of the original manuscript"
+        },
+        "original_file_size_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes of the original manuscript"
+        },
+        "source_hash_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of the original file bytes (lowercase hex)"
+        },
+        "ingested_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when Worker 1 ingested the file (UTC)"
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional: URL where the source file was retrieved (e.g., Airtable attachment URL)"
+        }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "description": "Processing metadata for reproducibility and debugging.",
+      "required": [
+        "worker_name",
+        "worker_version",
+        "run_id",
+        "project_id",
+        "service_id",
+        "processed_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "worker_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Worker identifier (e.g., 'worker_1_manuscript_processor')"
+        },
+        "worker_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Worker version (semantic versioning: MAJOR.MINOR.PATCH)"
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique run identifier (UUID or nanoid) for this processing run"
+        },
+        "project_id": {
+          "type": "string",
+          "pattern": "^rec[a-zA-Z0-9]{14}$",
+          "description": "Airtable Project record ID (e.g., 'recXXXXXXXXXXXXXX')"
+        },
+        "service_id": {
+          "type": "string",
+          "pattern": "^rec[a-zA-Z0-9]{14}$",
+          "description": "Airtable Service record ID (e.g., 'recYYYYYYYYYYYYYY')"
+        },
+        "processed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when processing completed (UTC)"
+        },
+        "processing_time_seconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Optional: Time taken to process the manuscript (seconds)"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Optional: Whether this was a dry-run (test mode, no side effects)"
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "description": "The canonical structured content. Worker 2 MUST render solely from blocks[], not from any raw text field.",
+      "required": [
+        "language",
+        "reading_direction",
+        "blocks",
+        "stats"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "ISO 639-1 language code (e.g., 'en', 'en-US', 'es', 'fr')"
+        },
+        "reading_direction": {
+          "type": "string",
+          "enum": ["ltr", "rtl"],
+          "description": "Reading direction: left-to-right or right-to-left"
+        },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Ordered array of content blocks. This is the CANONICAL TRUTH for rendering.",
+          "items": {
+            "$ref": "#/definitions/block"
+          }
+        },
+        "stats": {
+          "type": "object",
+          "required": ["word_count", "block_count", "chapter_count"],
+          "additionalProperties": false,
+          "properties": {
+            "word_count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total word count across all blocks"
+            },
+            "block_count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of blocks"
+            },
+            "chapter_count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of chapter_heading blocks"
+            },
+            "estimated_page_count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Optional: Estimated page count (rough, based on word count)"
+            }
+          }
+        },
+        "full_text": {
+          "type": "string",
+          "description": "Optional: Full text for reference/search. Worker 2 MUST NOT use this for rendering."
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "description": "Analysis results and warnings. Worker 2 MUST check warnings and fail/degrade appropriately.",
+      "required": [
+        "warnings",
+        "unsupported_elements",
+        "quality"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "warnings": {
+          "type": "array",
+          "description": "Array of warnings about detected edge cases. Can be empty if no warnings.",
+          "items": {
+            "$ref": "#/definitions/warning"
+          }
+        },
+        "unsupported_elements": {
+          "type": "array",
+          "description": "Array of unsupported elements detected. Can be empty if none found.",
+          "items": {
+            "$ref": "#/definitions/unsupported_element"
+          }
+        },
+        "quality": {
+          "type": "object",
+          "required": ["chapter_boundary_confidence", "ocr_used"],
+          "additionalProperties": true,
+          "properties": {
+            "chapter_boundary_confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Confidence score (0-1) for chapter boundary detection. <0.8 suggests manual review."
+            },
+            "ocr_used": {
+              "type": "boolean",
+              "description": "Whether OCR was used (true for scanned PDFs, false for native text)"
+            },
+            "parsing_errors_count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Optional: Number of parsing errors encountered (non-fatal)"
+            }
+          }
+        }
+      }
+    },
+    "parent_artifacts": {
+      "type": "array",
+      "description": "Optional: Lineage tracking. For manuscript.v1.json, this is typically empty (source file is not an artifact). Future artifacts will reference this.",
+      "items": {
+        "$ref": "#/definitions/parent_artifact"
+      }
+    }
+  },
+  "definitions": {
+    "block": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^b_[0-9]{6,}$",
+          "description": "Unique block identifier (e.g., 'b_000001', 'b_000120'). Stable across re-processing."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "front_matter_title",
+            "front_matter_copyright",
+            "front_matter_dedication",
+            "toc_marker",
+            "chapter_heading",
+            "heading",
+            "paragraph",
+            "blockquote",
+            "list",
+            "scene_break",
+            "horizontal_rule",
+            "page_break",
+            "back_matter_about_author",
+            "back_matter_also_by"
+          ],
+          "description": "Block type. Worker 2 MUST support all types or fail explicitly."
+        },
+        "text": {
+          "type": "string",
+          "description": "Plain text content (for blocks without inline formatting). Mutually exclusive with 'spans'."
+        },
+        "spans": {
+          "type": "array",
+          "description": "Array of text spans with inline formatting (for blocks with bold, italic, etc.). Mutually exclusive with 'text'.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/span"
+          }
+        },
+        "meta": {
+          "type": "object",
+          "description": "Optional block-specific metadata. Structure depends on block type.",
+          "additionalProperties": true
+        },
+        "source_loc": {
+          "type": "object",
+          "description": "Optional source location for traceability back to original document.",
+          "additionalProperties": true,
+          "properties": {
+            "doc_paragraph_index": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Paragraph index in original document (0-indexed)"
+            },
+            "doc_page_number": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number in original document (1-indexed)"
+            }
+          }
+        }
+      },
+      "oneOf": [
+        {"required": ["text"]},
+        {"required": ["spans"]},
+        {
+          "allOf": [
+            {"not": {"required": ["text"]}},
+            {"not": {"required": ["spans"]}}
+          ],
+          "description": "Some block types (scene_break, page_break, horizontal_rule) may have neither text nor spans"
+        }
+      ]
+    },
+    "span": {
+      "type": "object",
+      "required": ["text", "marks"],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Text content of this span"
+        },
+        "marks": {
+          "type": "array",
+          "description": "Array of inline formatting marks applied to this span. Empty array means no formatting.",
+          "items": {
+            "type": "string",
+            "enum": ["italic", "bold", "smallcaps", "code"],
+            "description": "Inline formatting mark"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "required": ["code", "severity"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "DETECTED_IMAGES",
+            "DETECTED_TABLES",
+            "DETECTED_FOOTNOTES",
+            "HEAVY_CENTERING",
+            "UNICODE_RISK",
+            "POEM_LIKE_BLOCKS",
+            "UNKNOWN_STYLES_DROPPED",
+            "LOW_CHAPTER_CONFIDENCE",
+            "OCR_QUALITY_ISSUES",
+            "PARSING_ERRORS"
+          ],
+          "description": "Warning code. Worker 2 MUST handle or fail explicitly based on severity."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Warning severity. Worker 2 MUST fail on 'high' if it cannot handle the issue."
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional: Number of occurrences (e.g., 3 images detected)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Optional: Human-readable warning message"
+        },
+        "locations": {
+          "type": "array",
+          "description": "Optional: Specific locations where the issue was detected",
+          "items": {
+            "type": "object",
+            "properties": {
+              "block_id": {"type": "string"},
+              "page_number": {"type": "integer"},
+              "description": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "unsupported_element": {
+      "type": "object",
+      "required": ["code", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "FOOTNOTES",
+            "ENDNOTES",
+            "IMAGES",
+            "TABLES",
+            "CHARTS",
+            "EQUATIONS",
+            "HYPERLINKS",
+            "COMMENTS",
+            "TRACK_CHANGES"
+          ],
+          "description": "Unsupported element type"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of unsupported elements detected"
+        },
+        "action_taken": {
+          "type": "string",
+          "enum": ["stripped", "converted_to_text", "placeholder_inserted", "ignored"],
+          "description": "Optional: What Worker 1 did with the unsupported element"
+        }
+      }
+    },
+    "parent_artifact": {
+      "type": "object",
+      "required": [
+        "artifact_type",
+        "artifact_version",
+        "artifact_key",
+        "artifact_hash",
+        "produced_by",
+        "produced_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "description": "Type of the parent artifact (e.g., 'manuscript')"
+        },
+        "artifact_version": {
+          "type": "string",
+          "description": "Version of the parent artifact (e.g., '1')"
+        },
+        "artifact_key": {
+          "type": "string",
+          "description": "R2 key of the parent artifact (e.g., 'services/recXXX/manuscript.v1.json')"
+        },
+        "artifact_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "SHA-256 hash of the parent artifact with 'sha256:' prefix"
+        },
+        "produced_by": {
+          "type": "string",
+          "description": "Worker that produced the parent artifact"
+        },
+        "produced_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the parent artifact was produced (ISO 8601 UTC)"
+        }
+      }
+    }
+  }
+}
