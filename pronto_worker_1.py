@@ -194,7 +194,7 @@ class ManuscriptProcessor:
                 'error': str(e)
             }
     
-       def _get_manuscript_url(self, service: Dict) -> Optional[tuple]:
+    def _get_manuscript_url(self, service: Dict) -> Optional[tuple]:
         """
         CANONICAL: Get manuscript file URL and filename from linked Manuscripts table.
         
