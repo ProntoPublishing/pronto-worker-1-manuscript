@@ -142,17 +142,16 @@ class BlockExtractor:
                 'type': block_type
             }
             
-            # Add text or spans
-            # Always include 'text' field for downstream compatibility
-            block['text'] = text
-            
-            # Also add 'spans' if there's formatting
+            # Add text or spans (schema requires ONE OF, not both)
             if spans and len(spans) > 1:
                 # Multiple spans with formatting
                 block['spans'] = spans
             elif spans and len(spans) == 1 and spans[0]['marks']:
                 # Single span with marks
                 block['spans'] = spans
+            else:
+                # Plain text (no formatting or single span without marks)
+                block['text'] = text
             
             # Add metadata if present
             if meta:
