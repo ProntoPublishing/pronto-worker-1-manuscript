@@ -318,7 +318,7 @@ class ManuscriptProcessor:
             # CANONICAL: Write to generic artifact fields
             'Artifact URL': artifact_url,
             'Artifact Key': artifact_key,
-            'Artifact Type': 'manuscript_json'
+            'Artifact Type': 'Manuscript JSON'
         }
         
         if warnings:
