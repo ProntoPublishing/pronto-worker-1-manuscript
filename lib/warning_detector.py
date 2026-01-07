@@ -319,7 +319,11 @@ class WarningDetector:
         chapter_blocks = [b for b in blocks if b['type'] == 'chapter_heading']
         if len(chapter_blocks) >= 3:
             # Check if chapter formats are consistent
-            formats = [b['text'][:20] for b in chapter_blocks]
+            # Safe guard: some blocks may have 'spans' instead of 'text'
+            missing = [b for b in chapter_blocks if 'text' not in b]
+            if missing:
+                logger.warning(f"{len(missing)} chapter blocks missing 'text' field; using _get_block_text()")
+            formats = [self._get_block_text(b)[:20] for b in chapter_blocks]
             format_counter = Counter(formats)
             
             if len(format_counter) > 2:  # More than 2 different formats

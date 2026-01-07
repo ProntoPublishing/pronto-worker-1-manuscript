@@ -118,6 +118,23 @@ class ManuscriptProcessor:
             service = self.services_table.get(service_id)
             logger.info(f"Fetched service: {service['fields'].get('Service Type')}")
             
+            # 1a. Idempotency guard: check if already processed
+            current_status = service['fields'].get('Status')
+            if current_status == 'Complete':
+                logger.info(f"Service {service_id} already Complete; skipping")
+                return {
+                    'status': 'already_complete',
+                    'message': 'Service already processed',
+                    'service_id': service_id
+                }
+            if current_status == 'Processing':
+                logger.info(f"Service {service_id} already Processing; skipping to avoid race")
+                return {
+                    'status': 'already_processing',
+                    'message': 'Service is currently being processed',
+                    'service_id': service_id
+                }
+            
             # 2. CANONICAL: Claim the service by setting Status to Processing
             self._claim_service(service_id)
             
