@@ -51,6 +51,15 @@ class WarningDetector:
         r'\d[a-z]',    # Digit followed by lowercase (e.g., "1ike")
     ]
     
+    def _get_block_text(self, block: Dict[str, Any]) -> str:
+        """Extract text from block regardless of whether it has 'text' or 'spans'."""
+        if 'text' in block:
+            return block['text']
+        elif 'spans' in block:
+            return ''.join(span['text'] for span in block['spans'])
+        else:
+            return ''
+    
     def detect(
         self,
         blocks: List[Dict[str, Any]],
@@ -97,14 +106,15 @@ class WarningDetector:
         image_keywords = ['[image]', '[figure]', '[photo]', '[illustration]']
         
         for i, block in enumerate(blocks):
-            text_lower = block['text'].lower()
+            text = self._get_block_text(block)
+            text_lower = text.lower()
             if any(kw in text_lower for kw in image_keywords):
                 warnings.append({
                     'code': 'DETECTED_IMAGES',
                     'severity': 'error',
                     'message': 'Image placeholder detected in text',
                     'block_index': i,
-                    'context': block['text'][:100]
+                    'context': text[:100]
                 })
         
         return warnings
@@ -119,7 +129,7 @@ class WarningDetector:
         
         # Heuristic: look for table-like patterns (multiple tabs/pipes)
         for i, block in enumerate(blocks):
-            text = block['text']
+            text = self._get_block_text(block)
             if text.count('\t') >= 3 or text.count('|') >= 3:
                 warnings.append({
                     'code': 'DETECTED_TABLES',
@@ -139,13 +149,14 @@ class WarningDetector:
         footnote_pattern = r'\[\d+\]|\(\d+\)|†|‡|§'
         
         for i, block in enumerate(blocks):
-            if re.search(footnote_pattern, block['text']):
+            text = self._get_block_text(block)
+            if re.search(footnote_pattern, text):
                 warnings.append({
                     'code': 'DETECTED_FOOTNOTES',
                     'severity': 'warning',
                     'message': 'Footnote/endnote marker detected',
                     'block_index': i,
-                    'context': block['text'][:100]
+                    'context': text[:100]
                 })
         
         return warnings
@@ -192,7 +203,8 @@ class WarningDetector:
         current_run = []
         
         for i, block in enumerate(blocks):
-            if len(block['text']) < 50 and block['type'] == 'paragraph':
+            text = self._get_block_text(block)
+            if len(text) < 50 and block['type'] == 'paragraph':
                 current_run.append(i)
             else:
                 if len(current_run) >= 4:  # 4+ short lines = poem-like
@@ -218,8 +230,9 @@ class WarningDetector:
         warnings = []
         
         for i, block in enumerate(blocks):
+            text = self._get_block_text(block)
             risky_chars = []
-            for char in block['text']:
+            for char in text:
                 code_point = ord(char)
                 for start, end in self.RISKY_UNICODE_RANGES:
                     if start <= code_point <= end:
@@ -242,7 +255,7 @@ class WarningDetector:
         warnings = []
         
         for i, block in enumerate(blocks):
-            text = block['text']
+            text = self._get_block_text(block)
             
             # Multiple consecutive spaces
             if '  ' in text:
@@ -262,7 +275,7 @@ class WarningDetector:
         
         # Heuristic: blocks with leading/trailing whitespace
         for i, block in enumerate(blocks):
-            text = block['text']
+            text = self._get_block_text(block)
             if text != text.strip() and len(text.strip()) > 0:
                 warnings.append({
                     'code': 'CENTERED_TEXT_BLOCKS',
@@ -279,7 +292,7 @@ class WarningDetector:
         warnings = []
         
         for i, block in enumerate(blocks):
-            text = block['text']
+            text = self._get_block_text(block)
             
             for pattern in self.OCR_PATTERNS:
                 matches = re.findall(pattern, text)
