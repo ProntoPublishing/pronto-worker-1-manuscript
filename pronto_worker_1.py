@@ -120,15 +120,16 @@ class ManuscriptProcessor:
             # 2. CANONICAL: Claim the service by setting Status to Processing
             self._claim_service(service_id)
             
-            # 3. CANONICAL: Get manuscript file URL from linked Manuscripts table
-            file_url = self._get_manuscript_url(service)
-            if not file_url:
+            # 3. CANONICAL: Get manuscript file URL and filename from linked Manuscripts table
+            manuscript_info = self._get_manuscript_url(service)
+            if not manuscript_info:
                 raise ValueError("No manuscript file found in linked Manuscripts record")
             
-            logger.info(f"Found manuscript URL: {file_url}")
+            file_url, filename = manuscript_info
+            logger.info(f"Found manuscript: {filename} at {file_url}")
             
             # 4. Download manuscript file
-            file_path = self._download_file(file_url)
+            file_path = self._download_file(file_url, filename)
             logger.info(f"Downloaded file: {file_path}")
             
             # 5. Extract blocks
@@ -193,15 +194,15 @@ class ManuscriptProcessor:
                 'error': str(e)
             }
     
-    def _get_manuscript_url(self, service: Dict[str, Any]) -> Optional[str]:
+       def _get_manuscript_url(self, service: Dict) -> Optional[tuple]:
         """
-        CANONICAL: Get manuscript file URL from linked Manuscripts table.
+        CANONICAL: Get manuscript file URL and filename from linked Manuscripts table.
         
         Args:
             service: Service record from Airtable
             
         Returns:
-            URL of the manuscript file, or None if not found
+            Tuple of (URL, filename) of the manuscript file, or None if not found
         """
         # Get linked Manuscripts record IDs
         manuscripts_links = service['fields'].get('Manuscripts', [])
@@ -223,16 +224,16 @@ class ManuscriptProcessor:
             logger.error("No file attached to Manuscripts record")
             return None
         
-        # Return the URL of the first attachment
-        return attachments[0]['url']
+        # Return the URL and filename of the first attachment
+        return (attachments[0]['url'], attachments[0]['filename'])
     
-    def _download_file(self, url: str) -> str:
+    def _download_file(self, url: str, filename: str) -> str:
         """Download file from URL to temp directory."""
         response = requests.get(url, stream=True)
         response.raise_for_status()
         
-        # Determine file extension from URL or Content-Type
-        ext = Path(url).suffix or '.bin'
+        # Get file extension from the original filename
+        ext = Path(filename).suffix or '.bin'
         temp_path = f"/tmp/manuscript_{datetime.now().timestamp()}{ext}"
         
         with open(temp_path, 'wb') as f:
