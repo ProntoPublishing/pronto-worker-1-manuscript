@@ -10,10 +10,9 @@ Includes:
 - Processing metadata
 - Content blocks with inline marks
 - Analysis warnings
-- Lineage tracking (parent artifacts)
 
 Author: Pronto Publishing
-Version: 4.0.0
+Version: 4.1.0 (Schema-compliant)
 """
 
 import json
@@ -35,7 +34,7 @@ class ArtifactBuilder:
         
         Args:
             worker_name: Name of the worker (e.g., "worker_1_manuscript_processor")
-            worker_version: Version of the worker (e.g., "4.0.0")
+            worker_version: Version of the worker (e.g., "4.1.0")
         """
         self.worker_name = worker_name
         self.worker_version = worker_version
@@ -46,7 +45,10 @@ class ArtifactBuilder:
         warnings: List[Dict[str, Any]],
         source_meta: Dict[str, Any],
         service_id: str,
-        parent_artifacts: Optional[List[Dict[str, Any]]] = None
+        project_id: str,
+        file_size_bytes: int,
+        file_hash_sha256: str,
+        ingested_at: str
     ) -> Dict[str, Any]:
         """
         Build complete manuscript artifact.
@@ -56,13 +58,20 @@ class ArtifactBuilder:
             warnings: List of detected warnings
             source_meta: Source file metadata
             service_id: Airtable service record ID
-            parent_artifacts: Optional list of parent artifacts (for lineage)
+            project_id: Airtable project record ID
+            file_size_bytes: Original file size in bytes
+            file_hash_sha256: SHA-256 hash of the original file
+            ingested_at: ISO 8601 timestamp when file was ingested
             
         Returns:
             Complete manuscript.v1.json artifact
         """
         run_id = str(uuid4())
-        produced_at = datetime.now(timezone.utc).isoformat()
+        processed_at = datetime.now(timezone.utc).isoformat()
+        
+        # Calculate word count from blocks
+        word_count = sum(len(block.get('text', '').split()) for block in blocks)
+        chapter_count = sum(1 for block in blocks if block.get('type') == 'chapter_heading')
         
         artifact = {
             # Schema metadata
@@ -74,10 +83,9 @@ class ArtifactBuilder:
             "source": {
                 "original_filename": source_meta.get('original_filename'),
                 "original_format": source_meta.get('original_format'),
-                "service_id": service_id,
-                "uploaded_at": None,  # Could be populated from Airtable
-                "file_size_bytes": None,  # Could be populated
-                "file_hash": None  # Could be populated
+                "original_file_size_bytes": file_size_bytes,
+                "source_hash_sha256": file_hash_sha256,
+                "ingested_at": ingested_at
             },
             
             # Processing metadata
@@ -85,64 +93,34 @@ class ArtifactBuilder:
                 "worker_name": self.worker_name,
                 "worker_version": self.worker_version,
                 "run_id": run_id,
-                "started_at": produced_at,  # Simplified (would track separately in production)
-                "completed_at": produced_at,
-                "duration_seconds": 0  # Simplified
+                "project_id": project_id,
+                "service_id": service_id,
+                "processed_at": processed_at
             },
             
             # Content blocks
             "content": {
+                "language": "en",
+                "reading_direction": "ltr",
                 "blocks": blocks,
-                "total_blocks": len(blocks),
-                "block_type_counts": self._count_block_types(blocks)
+                "stats": {
+                    "word_count": word_count,
+                    "block_count": len(blocks),
+                    "chapter_count": chapter_count
+                }
             },
             
             # Analysis warnings
             "analysis": {
                 "warnings": warnings,
-                "total_warnings": len(warnings),
-                "warnings_by_severity": self._count_by_severity(warnings),
-                "warnings_by_code": self._count_by_code(warnings)
-            },
-            
-            # Metadata
-            "meta": {
-                "detected_chapters": source_meta.get('detected_chapters', 0),
-                "has_front_matter": source_meta.get('has_front_matter', False),
-                "has_back_matter": source_meta.get('has_back_matter', False),
-                "total_paragraphs": source_meta.get('total_paragraphs'),
-                "total_pages": source_meta.get('total_pages'),
-                "total_lines": source_meta.get('total_lines')
-            },
-            
-            # Lineage tracking
-            "parent_artifacts": parent_artifacts or []
+                "unsupported_elements": [],
+                "quality": {
+                    "overall_score": 1.0,
+                    "issues": []
+                }
+            }
         }
         
         logger.info(f"Built artifact: {len(blocks)} blocks, {len(warnings)} warnings")
         
         return artifact
-    
-    def _count_block_types(self, blocks: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Count occurrences of each block type."""
-        counts = {}
-        for block in blocks:
-            block_type = block['type']
-            counts[block_type] = counts.get(block_type, 0) + 1
-        return counts
-    
-    def _count_by_severity(self, warnings: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Count warnings by severity level."""
-        counts = {'error': 0, 'warning': 0, 'info': 0}
-        for warning in warnings:
-            severity = warning.get('severity', 'info')
-            counts[severity] = counts.get(severity, 0) + 1
-        return counts
-    
-    def _count_by_code(self, warnings: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Count warnings by warning code."""
-        counts = {}
-        for warning in warnings:
-            code = warning['code']
-            counts[code] = counts.get(code, 0) + 1
-        return counts

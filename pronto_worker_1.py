@@ -36,6 +36,7 @@ import os
 import sys
 import json
 import logging
+import hashlib
 import traceback
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional, Tuple
@@ -132,6 +133,19 @@ class ManuscriptProcessor:
             file_path = self._download_file(file_url, filename)
             logger.info(f"Downloaded file: {file_path}")
             
+            # 4a. Calculate file metadata for artifact
+            file_size_bytes = os.path.getsize(file_path)
+            file_hash_sha256 = self._calculate_sha256(file_path)
+            ingested_at = datetime.now(timezone.utc).isoformat()
+            logger.info(f"File metadata: {file_size_bytes} bytes, SHA256: {file_hash_sha256[:16]}...")
+            
+            # 4b. Get project_id from service record
+            project_links = service['fields'].get('Project', [])
+            if not project_links:
+                raise ValueError("No Project linked to this Service")
+            project_id = project_links[0]
+            logger.info(f"Project ID: {project_id}")
+            
             # 5. Extract blocks
             blocks, source_meta = self.block_extractor.extract(file_path)
             logger.info(f"Extracted {len(blocks)} blocks")
@@ -145,7 +159,11 @@ class ManuscriptProcessor:
                 blocks=blocks,
                 warnings=warnings,
                 source_meta=source_meta,
-                service_id=service_id
+                service_id=service_id,
+                project_id=project_id,
+                file_size_bytes=file_size_bytes,
+                file_hash_sha256=file_hash_sha256,
+                ingested_at=ingested_at
             )
             
             # 8. Validate artifact
@@ -241,6 +259,14 @@ class ManuscriptProcessor:
                 f.write(chunk)
         
         return temp_path
+    
+    def _calculate_sha256(self, file_path: str) -> str:
+        """Calculate SHA-256 hash of a file."""
+        sha256_hash = hashlib.sha256()
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(8192), b''):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
     
     def _claim_service(self, service_id: str):
         """
