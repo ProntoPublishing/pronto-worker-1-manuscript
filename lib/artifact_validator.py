@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any
 
-from artifact_validate import validate_artifact as _validate_artifact
+from .artifact_validate import validate_artifact as _validate_artifact
 
 logger = logging.getLogger(__name__)
 

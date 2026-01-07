@@ -15,7 +15,7 @@ except ImportError:
         "jsonschema is required for validation. Install with: pip install jsonschema"
     )
 
-from artifact_registry import get_schema, SchemaNotFoundError
+from .artifact_registry import get_schema, SchemaNotFoundError
 
 
 class ArtifactValidationError(Exception):
