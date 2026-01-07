@@ -216,8 +216,8 @@ class ManuscriptProcessor:
         
         manuscript = self.manuscripts_table.get(manuscript_id)
         
-        # Get the attachment URL from the Uploaded Manuscript File field
-        attachments = manuscript['fields'].get('Uploaded Manuscript File', [])
+        # Get the attachment URL from the Manuscript File field
+        attachments = manuscript['fields'].get('Manuscript File', [])
         
         if not attachments:
             logger.error("No file attached to Manuscripts record")
