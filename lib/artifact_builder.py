@@ -115,8 +115,8 @@ class ArtifactBuilder:
                 "warnings": warnings,
                 "unsupported_elements": [],
                 "quality": {
-                    "overall_score": 1.0,
-                    "issues": []
+                    "chapter_boundary_confidence": 0.9,
+                    "ocr_used": False
                 }
             }
         }

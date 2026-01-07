@@ -10,7 +10,7 @@ Supports:
 - DOCX, PDF, TXT formats
 
 Author: Pronto Publishing
-Version: 4.0.0
+Version: 4.1.0 (Schema-compliant)
 """
 
 import re
@@ -40,18 +40,20 @@ class BlockExtractor:
     ]
     
     # Front matter keywords
-    FRONT_MATTER_KEYWORDS = [
-        'dedication', 'acknowledgments', 'acknowledgements', 'preface',
-        'foreword', 'introduction', 'prologue', 'table of contents',
-        'contents', 'epigraph'
-    ]
+    FRONT_MATTER_KEYWORDS = {
+        'dedication': 'front_matter_dedication',
+        'copyright': 'front_matter_copyright',
+        'title': 'front_matter_title',
+        'contents': 'toc_marker',
+        'table of contents': 'toc_marker',
+    }
     
     # Back matter keywords
-    BACK_MATTER_KEYWORDS = [
-        'epilogue', 'afterword', 'appendix', 'glossary', 'bibliography',
-        'references', 'notes', 'about the author', 'also by', 'acknowledgments',
-        'acknowledgements'
-    ]
+    BACK_MATTER_KEYWORDS = {
+        'about the author': 'back_matter_about_author',
+        'about author': 'back_matter_about_author',
+        'also by': 'back_matter_also_by',
+    }
     
     # Scene break patterns
     SCENE_BREAK_PATTERNS = [
@@ -60,6 +62,10 @@ class BlockExtractor:
         r'^\s*~\s*$',              # ~
         r'^\s*-{3,}\s*$',          # ---
     ]
+    
+    def __init__(self):
+        """Initialize block extractor."""
+        self.block_counter = 0
     
     def extract(self, file_path: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """
@@ -71,6 +77,9 @@ class BlockExtractor:
         Returns:
             Tuple of (blocks, source_meta)
         """
+        # Reset block counter for each file
+        self.block_counter = 0
+        
         ext = Path(file_path).suffix.lower()
         
         if ext == '.docx':
@@ -82,6 +91,11 @@ class BlockExtractor:
         else:
             raise ValueError(f"Unsupported file format: {ext}")
     
+    def _generate_block_id(self) -> str:
+        """Generate unique block ID."""
+        self.block_counter += 1
+        return f"b_{self.block_counter:06d}"
+    
     def _extract_docx(self, file_path: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Extract blocks from DOCX file with inline styling."""
         doc = Document(file_path)
@@ -92,7 +106,7 @@ class BlockExtractor:
         in_back_matter = False
         chapter_count = 0
         
-        for para in doc.paragraphs:
+        for para_idx, para in enumerate(doc.paragraphs):
             text = para.text.strip()
             
             if not text:
@@ -112,25 +126,41 @@ class BlockExtractor:
                 in_front_matter = False
                 meta['chapter_number'] = chapter_count
             
-            if block_type in ['front_matter_heading', 'front_matter_text']:
+            if block_type.startswith('front_matter') or block_type == 'toc_marker':
                 in_front_matter = True
             
-            if block_type in ['back_matter_heading', 'back_matter_text']:
+            if block_type.startswith('back_matter'):
                 in_back_matter = True
                 in_front_matter = False
             
-            # Extract inline marks
-            marks = self._extract_marks_from_para(para)
+            # Extract spans with inline marks
+            spans = self._extract_spans_from_para(para)
             
             # Build block
             block = {
-                'type': block_type,
-                'text': text,
-                'marks': marks if marks else []
+                'id': self._generate_block_id(),
+                'type': block_type
             }
             
+            # Add text or spans
+            if spans and len(spans) > 1:
+                # Multiple spans with formatting
+                block['spans'] = spans
+            elif spans and len(spans) == 1 and spans[0]['marks']:
+                # Single span with marks
+                block['spans'] = spans
+            else:
+                # Plain text (no formatting or single span without marks)
+                block['text'] = text
+            
+            # Add metadata if present
             if meta:
                 block['meta'] = meta
+            
+            # Add source location
+            block['source_loc'] = {
+                'doc_paragraph_index': para_idx
+            }
             
             blocks.append(block)
         
@@ -140,7 +170,7 @@ class BlockExtractor:
             'original_format': 'docx',
             'total_paragraphs': len(doc.paragraphs),
             'detected_chapters': chapter_count,
-            'has_front_matter': any(b['type'].startswith('front_matter') for b in blocks),
+            'has_front_matter': any(b['type'].startswith('front_matter') or b['type'] == 'toc_marker' for b in blocks),
             'has_back_matter': any(b['type'].startswith('back_matter') for b in blocks)
         }
         
@@ -152,14 +182,15 @@ class BlockExtractor:
         """Extract blocks from PDF file (text-only, no styling)."""
         blocks = []
         
+        # Track state
+        in_front_matter = True
+        in_back_matter = False
+        chapter_count = 0
+        
         with open(file_path, 'rb') as f:
             reader = PyPDF2.PdfReader(f)
             
-            in_front_matter = True
-            in_back_matter = False
-            chapter_count = 0
-            
-            for page in reader.pages:
+            for page_num, page in enumerate(reader.pages, start=1):
                 text = page.extract_text()
                 lines = text.split('\n')
                 
@@ -183,19 +214,26 @@ class BlockExtractor:
                         in_front_matter = False
                         meta['chapter_number'] = chapter_count
                     
-                    if block_type in ['back_matter_heading', 'back_matter_text']:
+                    if block_type.startswith('front_matter') or block_type == 'toc_marker':
+                        in_front_matter = True
+                    
+                    if block_type.startswith('back_matter'):
                         in_back_matter = True
                         in_front_matter = False
                     
                     # Build block (no inline marks for PDF)
                     block = {
+                        'id': self._generate_block_id(),
                         'type': block_type,
-                        'text': line,
-                        'marks': []
+                        'text': line
                     }
                     
                     if meta:
                         block['meta'] = meta
+                    
+                    block['source_loc'] = {
+                        'doc_page_number': page_num
+                    }
                     
                     blocks.append(block)
         
@@ -205,7 +243,7 @@ class BlockExtractor:
             'original_format': 'pdf',
             'total_pages': len(reader.pages),
             'detected_chapters': chapter_count,
-            'has_front_matter': any(b['type'].startswith('front_matter') for b in blocks),
+            'has_front_matter': any(b['type'].startswith('front_matter') or b['type'] == 'toc_marker' for b in blocks),
             'has_back_matter': any(b['type'].startswith('back_matter') for b in blocks)
         }
         
@@ -219,11 +257,13 @@ class BlockExtractor:
             lines = f.readlines()
         
         blocks = []
+        
+        # Track state
         in_front_matter = True
         in_back_matter = False
         chapter_count = 0
         
-        for line in lines:
+        for line_num, line in enumerate(lines, start=1):
             line = line.strip()
             
             if not line:
@@ -243,15 +283,18 @@ class BlockExtractor:
                 in_front_matter = False
                 meta['chapter_number'] = chapter_count
             
-            if block_type in ['back_matter_heading', 'back_matter_text']:
+            if block_type.startswith('front_matter') or block_type == 'toc_marker':
+                in_front_matter = True
+            
+            if block_type.startswith('back_matter'):
                 in_back_matter = True
                 in_front_matter = False
             
             # Build block
             block = {
+                'id': self._generate_block_id(),
                 'type': block_type,
-                'text': line,
-                'marks': []
+                'text': line
             }
             
             if meta:
@@ -265,7 +308,7 @@ class BlockExtractor:
             'original_format': 'txt',
             'total_lines': len(lines),
             'detected_chapters': chapter_count,
-            'has_front_matter': any(b['type'].startswith('front_matter') for b in blocks),
+            'has_front_matter': any(b['type'].startswith('front_matter') or b['type'] == 'toc_marker' for b in blocks),
             'has_back_matter': any(b['type'].startswith('back_matter') for b in blocks)
         }
         
@@ -303,72 +346,61 @@ class BlockExtractor:
                     meta['chapter_number'] = int(match.group())
                 return 'chapter_heading', meta
         
-        # Check for front matter
-        if in_front_matter or any(kw in text_lower for kw in self.FRONT_MATTER_KEYWORDS):
-            if style and 'heading' in style.lower():
-                return 'front_matter_heading', {'detected_keyword': text_lower}
-            return 'front_matter_text', {}
+        # Check for specific front matter types
+        for keyword, block_type in self.FRONT_MATTER_KEYWORDS.items():
+            if keyword in text_lower:
+                return block_type, {'detected_keyword': keyword}
         
-        # Check for back matter
-        if in_back_matter or any(kw in text_lower for kw in self.BACK_MATTER_KEYWORDS):
-            if style and 'heading' in style.lower():
-                return 'back_matter_heading', {'detected_keyword': text_lower}
-            return 'back_matter_text', {}
+        # Check for specific back matter types
+        for keyword, block_type in self.BACK_MATTER_KEYWORDS.items():
+            if keyword in text_lower:
+                return block_type, {'detected_keyword': keyword}
         
-        # Check for title page elements
-        if len(text.split()) <= 10 and not in_front_matter and not in_back_matter:
-            if style and 'title' in style.lower():
-                return 'title_page', {'style': style}
+        # Generic front matter (fallback to dedication)
+        if in_front_matter:
+            return 'front_matter_dedication', {}
+        
+        # Generic back matter (fallback to about author)
+        if in_back_matter:
+            return 'back_matter_about_author', {}
         
         # Default to paragraph
         return 'paragraph', {}
     
-    def _extract_marks_from_para(self, para: Paragraph) -> List[Dict[str, Any]]:
+    def _extract_spans_from_para(self, para: Paragraph) -> List[Dict[str, Any]]:
         """
-        Extract inline marks from DOCX paragraph.
+        Extract spans with inline marks from DOCX paragraph.
         
-        Returns list of mark objects with start/end positions.
+        Returns list of span objects: [{text: str, marks: [str]}]
         """
-        marks = []
-        position = 0
+        spans = []
         
         for run in para.runs:
             run_text = run.text
-            run_length = len(run_text)
             
             if not run_text:
                 continue
             
-            # Detect marks
+            # Collect marks for this span
+            marks = []
+            
             if run.italic:
-                marks.append({
-                    'type': 'italic',
-                    'start': position,
-                    'end': position + run_length
-                })
+                marks.append('italic')
             
             if run.bold:
-                marks.append({
-                    'type': 'bold',
-                    'start': position,
-                    'end': position + run_length
-                })
+                marks.append('bold')
             
-            if run.font.small_caps:
-                marks.append({
-                    'type': 'smallcaps',
-                    'start': position,
-                    'end': position + run_length
-                })
+            if run.font and run.font.small_caps:
+                marks.append('smallcaps')
             
             # Code detection (monospace font)
-            if run.font.name and 'mono' in run.font.name.lower():
-                marks.append({
-                    'type': 'code',
-                    'start': position,
-                    'end': position + run_length
-                })
+            if run.font and run.font.name and 'mono' in run.font.name.lower():
+                marks.append('code')
             
-            position += run_length
+            # Create span
+            spans.append({
+                'text': run_text,
+                'marks': marks
+            })
         
-        return marks
+        return spans
