@@ -28,6 +28,10 @@ class RuleContext:
             Surfaces at the artifact top level via emit.build_artifact.
             Intake-vs-manuscript reconciliation (v1.1 punchlist) reads
             from here on the extraction side.
+        intake_metadata: Optional {title, subtitle, author, ...} passed
+            in by the caller (pronto_worker_1.py) from the Airtable
+            Service record. Read by H-001 to decide between author's
+            title page and system-generated. Rules MUST NOT write here.
         artifact: Top-level artifact under construction. Includes source,
             processing, version fields. Rules may read but typically don't
             mutate.
@@ -39,6 +43,7 @@ class RuleContext:
     warnings: List[Dict[str, Any]] = field(default_factory=list)
     rule_faults: List[Dict[str, Any]] = field(default_factory=list)
     manuscript_meta: Optional[Dict[str, Any]] = None
+    intake_metadata: Optional[Dict[str, Any]] = None
     artifact: Dict[str, Any] = field(default_factory=dict)
     extras: Dict[str, Any] = field(default_factory=dict)
 

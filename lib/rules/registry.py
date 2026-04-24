@@ -33,6 +33,7 @@ from .validation import (
     V003_SpaceLossHeuristic,
     V004_TrackedChangesResidueDetector,
 )
+from .human import H001_AuthorTitlePageVsIntake
 
 
 RuleFactory = Callable[..., Rule]
@@ -65,8 +66,7 @@ RULE_REGISTRY: List[Dict[str, object]] = [
     {"id": "V-003", "phase": "validate",  "order": 3, "factory": V003_SpaceLossHeuristic},
     {"id": "V-004", "phase": "validate",  "order": 4, "factory": V004_TrackedChangesResidueDetector},
 
-    # --- Iteration 6 fills this in:
-    # {"id": "H-001", "phase": "emit",      "order": 1, "factory": ...},
+    {"id": "H-001", "phase": "emit",      "order": 1, "factory": H001_AuthorTitlePageVsIntake},
 ]
 
 

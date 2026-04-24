@@ -48,13 +48,17 @@ def _schema_validator():
     return jsonschema.Draft7Validator(schema)
 
 
-def _process_fixture(path: Path) -> tuple[RuleContext, Exception | None]:
+def _process_fixture(
+    path: Path,
+    intake_metadata: dict | None = None,
+) -> tuple[RuleContext, Exception | None]:
     """Run the full W1 v2 pipeline over a fixture file. Returns (ctx, exc).
 
-    In iteration 1 only the ingest phase has a registered rule (R-001).
-    Subsequent iterations return a fully processed context.
+    intake_metadata is threaded into ctx before pipeline execution so
+    H-001 (emit phase) can compare against it. Default None → H-001
+    never fires.
     """
-    ctx = RuleContext(blocks=[], artifact={})
+    ctx = RuleContext(blocks=[], artifact={}, intake_metadata=intake_metadata)
     source_meta = {
         "original_filename": path.name,
         "original_format": "docx" if path.suffix.lower() == ".docx" else path.suffix.lstrip("."),
@@ -776,6 +780,80 @@ class Test_V003_SpaceLossHeuristic(BaseFixtureTest):
         v003 = [w for w in ctx.warnings if w.get("rule") == "V-003"]
         self.assertEqual(v003, [],
                          f"V-003 false-positive: {[w['detail'] for w in v003]}")
+
+
+class Test_H001_AuthorTitlePageVsIntake(BaseFixtureTest):
+    """H-001 emit, order 1 (Layer 5 human-clarification default).
+
+    The fixture alone isn't enough: H-001 compares manuscript_meta
+    (written by C-003) against intake_metadata (passed in by the
+    caller). Each test case supplies an intake dict matching its
+    scenario.
+    """
+
+    def test_positive_matching_intake_records_decision(self):
+        """Author title page matches intake → applied_rules[] records
+        the 'used author title page' decision, no warning."""
+        path = self._fixture("h001_author_title_and_intake.docx")
+        intake = {"title": "Shadows of the Forgotten", "author": "Jane Author"}
+        ctx, exc = _process_fixture(path, intake_metadata=intake)
+        self.assertIsNone(exc)
+        h001 = [r for r in ctx.applied_rules if r.get("rule") == "H-001"]
+        self.assertEqual(len(h001), 1)
+        self.assertEqual(
+            h001[0]["decision"],
+            "used author title page; suppressed system-generated",
+        )
+        # No H-001 divergence warning when fields match.
+        div = [w for w in ctx.warnings if w.get("rule") == "H-001"]
+        self.assertEqual(div, [])
+
+    def test_positive_divergent_intake_warns(self):
+        """Author title differs materially from intake → H-001 still
+        fires (decision: use author's) AND a divergence warning is
+        emitted for human review."""
+        path = self._fixture("h001_author_title_and_intake.docx")
+        intake = {"title": "The Wrong Title", "author": "Jane Author"}
+        ctx, exc = _process_fixture(path, intake_metadata=intake)
+        self.assertIsNone(exc)
+        h001 = [r for r in ctx.applied_rules if r.get("rule") == "H-001"]
+        self.assertEqual(len(h001), 1)
+        div = [w for w in ctx.warnings if w.get("rule") == "H-001"]
+        self.assertEqual(len(div), 1)
+        self.assertIn("title differs", div[0]["detail"])
+
+    def test_negative_no_title_page_no_fire(self):
+        """Author didn't supply a title page → no manuscript_meta title
+        → H-001 must NOT fire even when intake is populated."""
+        path = self._fixture("c003_no_title_page.docx")
+        intake = {"title": "Some Book", "author": "Some Author"}
+        ctx, exc = _process_fixture(path, intake_metadata=intake)
+        self.assertIsNone(exc)
+        h001 = [r for r in ctx.applied_rules if r.get("rule") == "H-001"]
+        self.assertEqual(h001, [])
+
+    def test_negative_no_intake_no_fire(self):
+        """Intake absent → H-001 no-op even when manuscript_meta is
+        populated."""
+        path = self._fixture("h001_author_title_and_intake.docx")
+        ctx, exc = _process_fixture(path, intake_metadata=None)
+        self.assertIsNone(exc)
+        h001 = [r for r in ctx.applied_rules if r.get("rule") == "H-001"]
+        self.assertEqual(h001, [])
+
+    def test_h001_warning_passes_schema(self):
+        """H-001's divergence warning uses rule='H-001' — the schema
+        was widened to accept H-### in addition to V-###. Confirm the
+        resulting artifact validates."""
+        path = self._fixture("h001_author_title_and_intake.docx")
+        intake = {"title": "The Wrong Title", "author": "Jane Author"}
+        ctx, exc = _process_fixture(path, intake_metadata=intake)
+        self.assertIsNone(exc)
+        errors = list(self.validator.iter_errors(ctx.artifact))
+        if errors:
+            for e in errors[:3]:
+                print(f"  schema err: {e.message}")
+        self.assertEqual(errors, [])
 
 
 class Test_ArtifactSchemaEndToEnd(BaseFixtureTest):

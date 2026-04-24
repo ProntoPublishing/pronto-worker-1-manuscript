@@ -336,7 +336,7 @@
       "additionalProperties": false,
       "required": ["rule", "severity", "detail"],
       "properties": {
-        "rule":     { "type": "string", "pattern": "^V-\\d{3}$", "description": "Doc 22 validator rule id (V-###)." },
+        "rule":     { "type": "string", "pattern": "^[VH]-\\d{3}$", "description": "Doc 22 rule id that produced the warning. Layer 3 validators (V-###) are the primary source; Layer 5 rules (H-###) may also emit divergence warnings — e.g., H-001 flags intake-vs-manuscript title mismatches." },
         "severity": { "type": "string", "enum": ["low", "medium", "high"] },
         "detail":   { "type": "string", "description": "Human-readable warning summary. Include the specific observation (e.g., \"possible missing space: 'theweather'\")." },
         "block_id": { "type": "string", "pattern": "^b_[0-9]{6,}$", "description": "Optional: the block this warning is anchored to." },
