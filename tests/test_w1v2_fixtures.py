@@ -240,22 +240,149 @@ class Test_Extractor_Smoke(BaseFixtureTest):
         self.assertTrue(any(b["type"] == "heading" and b.get("heading_level") == 1 for b in blocks),
                         "Heading1 (part divider candidate) missing")
 
-    def test_empty_paragraph_runs_collapsed(self):
-        """N-001 paragraph-level extension — the extractor collapses runs
-        of 2+ empty paragraphs to a single empty_line block.
+    def test_extractor_emits_empty_paragraph_runs_raw(self):
+        """The extractor emits empty-line paragraphs as they appear in
+        the source. Collapsing runs of 2+ is N-001's paragraph-level
+        extension, exercised via the full pipeline in Test_N001_*.
         """
         path = self._fixture("n001_double_spaces.docx")
         blocks, _ = extract_docx(path)
-        empty_runs = 0
-        streak = 0
-        for b in blocks:
-            if b["type"] == "paragraph" and "empty_line" in (b.get("style_tags") or []):
-                streak += 1
-                if streak > 1:
-                    empty_runs += 1
-            else:
-                streak = 0
-        self.assertEqual(empty_runs, 0, "consecutive empty paragraphs not collapsed")
+        streaks = _count_consecutive_empty_line_runs(blocks)
+        self.assertGreaterEqual(
+            streaks["max"], 2,
+            "extractor should emit raw empty-paragraph runs for N-001 to collapse"
+        )
+
+
+def _count_consecutive_empty_line_runs(blocks):
+    """Return {'max': longest streak of empty-line blocks, 'streaks': int}."""
+    max_streak = 0
+    streaks_over_one = 0
+    streak = 0
+    for b in blocks:
+        if b.get("type") == "paragraph" and "empty_line" in (b.get("style_tags") or []):
+            streak += 1
+            max_streak = max(max_streak, streak)
+        else:
+            if streak > 1:
+                streaks_over_one += 1
+            streak = 0
+    if streak > 1:
+        streaks_over_one += 1
+    return {"max": max_streak, "streaks": streaks_over_one}
+
+
+def _block_texts(blocks):
+    """Helper: return the concatenated text of each block as a list."""
+    out = []
+    for b in blocks:
+        if "spans" in b:
+            out.append("".join(s.get("text", "") for s in b["spans"]))
+        elif "text" in b:
+            out.append(b["text"])
+        else:
+            out.append("")
+    return out
+
+
+class Test_N001_CollapseDoubleSpaces(BaseFixtureTest):
+    """N-001 strip-phase + paragraph-level extension."""
+
+    def test_positive_double_spaces_collapsed(self):
+        path = self._fixture("n001_double_spaces.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        for text in _block_texts(ctx.blocks):
+            self.assertNotIn("  ", text, f"double space survived N-001: {text!r}")
+
+    def test_positive_empty_paragraph_runs_collapsed(self):
+        path = self._fixture("n001_double_spaces.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        streaks = _count_consecutive_empty_line_runs(ctx.blocks)
+        self.assertEqual(
+            streaks["streaks"], 0,
+            "N-001 paragraph-level extension did not collapse empty-line runs"
+        )
+        self.assertLessEqual(streaks["max"], 1)
+
+    def test_negative_preformatted_preserved(self):
+        """n001_code_block_preserved.docx has a monospace paragraph with
+        double spaces that N-001 must NOT touch.
+        """
+        path = self._fixture("n001_code_block_preserved.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        # Find the preformatted block.
+        preformatted = [b for b in ctx.blocks if b.get("preformatted") is True]
+        self.assertTrue(preformatted, "extractor did not mark the code paragraph preformatted")
+        for b in preformatted:
+            joined = "".join(s.get("text", "") for s in b.get("spans", []))
+            self.assertIn("  ", joined,
+                          "N-001 touched a preformatted block (double spaces stripped)")
+
+    def test_n001_is_silent_no_applied_rules_entry(self):
+        """N-001 is Layer 1a — MUST NOT emit to applied_rules[]."""
+        path = self._fixture("n001_double_spaces.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        n001_entries = [r for r in ctx.applied_rules if r.get("rule") == "N-001"]
+        self.assertEqual(n001_entries, [],
+                         "N-001 is Layer 1a; emits nothing to applied_rules[]")
+
+
+class Test_N003_StripZeroWidthAndLayoutHacks(BaseFixtureTest):
+    """N-003 strip-phase."""
+
+    def test_positive_zero_width_chars_stripped(self):
+        path = self._fixture("n003_zwsp_nbsp_hacks.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        for text in _block_texts(ctx.blocks):
+            for ch, name in [
+                ("\u200B", "ZWSP"),
+                ("\u200C", "ZWNJ"),
+                ("\u200D", "ZWJ"),
+                ("\uFEFF", "BOM"),
+            ]:
+                self.assertNotIn(ch, text, f"{name} survived N-003")
+
+    def test_positive_nbsp_runs_collapsed(self):
+        path = self._fixture("n003_zwsp_nbsp_hacks.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        # There should be no run of 2+ NBSP surviving.
+        for text in _block_texts(ctx.blocks):
+            self.assertNotIn("\u00A0\u00A0", text,
+                             f"NBSP run survived N-003: {text!r}")
+
+    def test_negative_preformatted_preserved(self):
+        """The N-003 exemption: preformatted content must retain its
+        zero-width / NBSP content. We reuse n001_code_block_preserved —
+        it has no zero-width chars, but verifying that N-003 walks only
+        non-preformatted blocks is enough with a smoke assertion that
+        the preformatted block's text is unchanged.
+        """
+        path = self._fixture("n001_code_block_preserved.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        preformatted = [b for b in ctx.blocks if b.get("preformatted") is True]
+        self.assertTrue(preformatted)
+        for b in preformatted:
+            joined = "".join(s.get("text", "") for s in b.get("spans", []))
+            # The fixture's code content — used here as a ground-truth
+            # anchor. If the extractor changes how it surfaces preformatted
+            # content, update this assertion.
+            self.assertIn("def  greet(name)", joined,
+                          "preformatted block text was altered")
+
+    def test_n003_is_silent_no_applied_rules_entry(self):
+        path = self._fixture("n003_zwsp_nbsp_hacks.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        n003_entries = [r for r in ctx.applied_rules if r.get("rule") == "N-003"]
+        self.assertEqual(n003_entries, [],
+                         "N-003 is Layer 1a; emits nothing to applied_rules[]")
 
 
 if __name__ == "__main__":

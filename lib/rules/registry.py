@@ -15,6 +15,10 @@ from typing import Callable, Dict, List
 
 from .base import Rule
 from .rejection import R001_UnsupportedFormat
+from .normalization import (
+    N001_CollapseDoubleSpaces,
+    N003_StripZeroWidthAndLayoutHacks,
+)
 
 
 RuleFactory = Callable[..., Rule]
@@ -31,9 +35,8 @@ RULE_REGISTRY: List[Dict[str, object]] = [
     # (tracked-change acceptance happens during DOCX → CIR). No pluggable
     # rule entry in the registry; V-004 catches leaks.
 
-    # --- Iteration 2 fills these in:
-    # {"id": "N-001", "phase": "strip",     "order": 1, "factory": ...},
-    # {"id": "N-003", "phase": "strip",     "order": 2, "factory": ...},
+    {"id": "N-001", "phase": "strip",     "order": 1, "factory": N001_CollapseDoubleSpaces},
+    {"id": "N-003", "phase": "strip",     "order": 2, "factory": N003_StripZeroWidthAndLayoutHacks},
 
     # --- Iteration 3 fills these in:
     # {"id": "C-001", "phase": "classify",  "order": 1, "factory": ...},

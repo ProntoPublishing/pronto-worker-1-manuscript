@@ -20,6 +20,23 @@ Does NOT yet handle (deferred to later iterations by design, one file):
   - DOCX numbered/bulleted list → list_item (v1 emits as paragraph; list
     detection arrives with Layer 2 rules in a later iteration).
 
+Body font-size resolution for large_font / small_font style tags:
+  The extractor resolves "body font size" (the denominator for the
+  ≥1.5× / ≤0.75× ratio checks) in the following order, first hit wins:
+    1. styles.xml docDefaults/rPrDefault/rPr/sz — the document-declared
+       default body size. This is the correct notion of "body size" in
+       Word: any paragraph that overrides it is intentionally larger or
+       smaller.
+    2. Median of explicit w:sz values across non-heading paragraphs in
+       the document. Used only when docDefaults is absent. Can be
+       skewed by title-cluster paragraphs that set explicit sizes, so
+       it's a fallback, not the preferred signal.
+    3. DOCX spec default (22 half-points = 11pt).
+  This is a DOCX-specific mechanism; format-agnostic Doc 22 does not
+  (and should not) specify it. Future format extractors (Markdown, etc.)
+  will have their own notion of body size. On the standing docs-hygiene
+  punchlist as an extractor-level documentation item.
+
 Version: 5.0.0a1 (contract v1.1, manuscript.v2.0 producer — pre-release).
 """
 from __future__ import annotations
@@ -92,9 +109,10 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
             continue
         # Anything else (bookmarkStart etc.) — ignore at this layer.
 
-    # --- Paragraph-level empty-line run collapsing (N-001 paragraph-level
-    # extension). We do this in a post-pass so the walker stays simple.
-    blocks = _collapse_empty_line_runs(blocks)
+    # Note: paragraph-level empty-line run collapsing is N-001's job
+    # (paragraph-level extension). The extractor emits empty-line blocks
+    # as they appear in the source; N-001 in the strip phase collapses
+    # runs of 2+ into one.
 
     source_meta = {
         "original_filename": file_path.name,
@@ -260,33 +278,31 @@ def _paragraph_style(p_elem: ET.Element) -> Dict[str, Any]:
         "is_preformatted": False,
         "is_blockquote": False,
     }
+
     ppr = p_elem.find("w:pPr", NS)
-    if ppr is None:
-        return out
+    if ppr is not None:
+        pstyle = ppr.find("w:pStyle", NS)
+        if pstyle is not None:
+            style_val = pstyle.get(f"{{{W}}}val", "")
+            out["name"] = style_val
+            m = _HEADING_STYLE_RE.match(style_val or "")
+            if m:
+                lvl = int(m.group(1))
+                if 1 <= lvl <= 6:
+                    out["heading_level"] = lvl
+            lv = style_val.lower() if style_val else ""
+            if lv in ("quote", "quotation", "intensequote", "blockquote"):
+                out["is_blockquote"] = True
+            if lv in (
+                "code", "codeblock", "sourcecode", "preformatted",
+                "htmlpreformatted",
+            ):
+                out["is_preformatted"] = True
 
-    pstyle = ppr.find("w:pStyle", NS)
-    if pstyle is not None:
-        style_val = pstyle.get(f"{{{W}}}val", "")
-        out["name"] = style_val
-        m = _HEADING_STYLE_RE.match(style_val or "")
-        if m:
-            lvl = int(m.group(1))
-            if 1 <= lvl <= 6:
-                out["heading_level"] = lvl
-        lv = style_val.lower() if style_val else ""
-        # Blockquote / quote / quotation variants — treat as blockquote.
-        if lv in ("quote", "quotation", "intensequote", "blockquote"):
-            out["is_blockquote"] = True
-        # Common preformatted style names.
-        if lv in (
-            "code", "codeblock", "sourcecode", "preformatted",
-            "htmlpreformatted",
-        ):
-            out["is_preformatted"] = True
-
-    # Run-level monospace detection as a second preformatted signal.
-    # The existing codebase + Doc 22 §CIR both call out monospace fonts as
-    # a preformatted indicator.
+    # Run-level monospace detection as a second preformatted signal —
+    # checked regardless of whether a w:pPr was present, because DOCX
+    # files can carry monospace font hints at the run level without
+    # declaring a paragraph style.
     if not out["is_preformatted"]:
         if _has_monospace_run(p_elem):
             out["is_preformatted"] = True
@@ -543,36 +559,6 @@ def _detect_body_font_size(z: zipfile.ZipFile) -> Dict[str, Optional[int]]:
         "median_half_points": DEFAULT_BODY_HALF_POINTS,
         "median_pt": DEFAULT_BODY_HALF_POINTS / 2.0,
     }
-
-
-# ---------------------------------------------------------------------------
-# Post-walk: empty-line run collapse (N-001 paragraph-level extension)
-# ---------------------------------------------------------------------------
-
-def _collapse_empty_line_runs(blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Collapse runs of 2+ consecutive empty-line paragraph blocks into one.
-
-    An empty-line block is identified by type==paragraph and style_tags
-    containing 'empty_line'.
-    """
-    out: List[Dict[str, Any]] = []
-    for b in blocks:
-        is_empty_line = (
-            b.get("type") == "paragraph"
-            and "empty_line" in (b.get("style_tags") or [])
-        )
-        if is_empty_line and out and _is_empty_line(out[-1]):
-            # Collapse — discard this duplicate empty line.
-            continue
-        out.append(b)
-    return out
-
-
-def _is_empty_line(block: Dict[str, Any]) -> bool:
-    return (
-        block.get("type") == "paragraph"
-        and "empty_line" in (block.get("style_tags") or [])
-    )
 
 
 # ---------------------------------------------------------------------------
