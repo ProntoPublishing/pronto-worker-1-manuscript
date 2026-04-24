@@ -20,6 +20,7 @@ from typing import Dict, List, Any, Optional
 from .rules.base import RuleContext, PHASES
 from .rules.registry import RULE_REGISTRY, rules_for_phase
 from .rules.rejection import RuleRejectException
+from .rules.terminal_default import apply_terminal_default
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +70,24 @@ def run_phase(
             })
             logger.exception(f"[{rule_id}] faulted during {phase}")
 
+    # End-of-phase hooks. Terminal default (Doc 22 v1.0.2 Patch 1) runs
+    # at the very end of the classify phase — after every C-### rule has
+    # had its chance but before Validate begins. It is operational
+    # policy, not a Layer 2 rule, so it isn't in the registry.
+    if phase == "classify":
+        apply_terminal_default(ctx)
+
 
 def run_all_phases(
     ctx: RuleContext,
     *,
     factory_args: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Run every phase in canonical order. Convenience wrapper."""
+    """Run every phase in canonical order. Convenience wrapper.
+
+    Terminal default lands at the end of the Classify phase; run_phase
+    handles that internally.
+    """
     for phase in PHASES:
         run_phase(phase, ctx, factory_args=factory_args)
 

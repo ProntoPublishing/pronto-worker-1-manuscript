@@ -38,7 +38,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = REPO_ROOT / "tests" / "fixtures" / "v1"
 SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.0.schema.json"
 
-WORKER_VERSION = "5.0.0a1"
+WORKER_VERSION = "5.0.0-a1"  # SemVer 2.0 pre-release marker
 RULES_VERSION = "1.0.2"
 
 
@@ -155,7 +155,7 @@ class Test_R001_UnsupportedFormat(BaseFixtureTest):
         )
         self.assertEqual(
             key,
-            "services/TALLY-8F3Q/INTFMT/manuscript/v2.0/w5.0.0a1-r1.0.2/manuscript.json",
+            "services/TALLY-8F3Q/INTFMT/manuscript/v2.0/w5.0.0-a1-r1.0.2/manuscript.json",
         )
 
 
@@ -638,6 +638,206 @@ class Test_C003_TitlePage(BaseFixtureTest):
         C003_TitlePage().run(ctx)
         self.assertEqual(ctx.blocks[0]["role"], "front_matter",
                          "I-10 violated: C-003 overwrote a prior role assignment")
+
+
+class Test_TerminalDefault(BaseFixtureTest):
+    """Terminal default (Doc 22 v1.0.2 Patch 1) — runs at end of classify."""
+
+    def test_body_paragraph_gets_role_after_terminal_default(self):
+        """A body paragraph that no classifier touched must end up with
+        role=body_paragraph and a 'terminal default applied' note.
+        """
+        path = self._fixture("c001_chapter_newline_title.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        body_paras = [b for b in ctx.blocks
+                      if b.get("type") == "paragraph"
+                      and b.get("role") == "body_paragraph"]
+        self.assertGreater(len(body_paras), 0,
+                           "expected at least one body paragraph")
+        # At least one of them was assigned by terminal default.
+        td_applied = [
+            b for b in body_paras
+            if "terminal default applied" in (b.get("classification_notes") or [])
+        ]
+        self.assertGreater(len(td_applied), 0,
+                           "terminal default didn't touch any body paragraph")
+
+    def test_every_block_has_role_after_classify(self):
+        """I-2 enforcement via terminal default: after classify, every
+        block has a non-null role.
+        """
+        path = self._fixture("c001_chapter_newline_title.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        for b in ctx.blocks:
+            self.assertTrue(b.get("role"),
+                            f"block {b.get('id')} lacks a role after classify")
+
+    def test_terminal_default_honors_existing_role(self):
+        """If a classifier already set a role, terminal default leaves
+        it alone (no overwrite, no duplicate note).
+        """
+        path = self._fixture("c003_author_title_page.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        title_page = [b for b in ctx.blocks if b.get("role") == "title_page"]
+        self.assertGreater(len(title_page), 0)
+        for b in title_page:
+            notes = b.get("classification_notes") or []
+            self.assertNotIn("terminal default applied", notes,
+                             "terminal default overwrote/re-noted a classified block")
+
+
+class Test_V001_ChapterNumberContinuity(BaseFixtureTest):
+
+    def test_positive_gap_detected(self):
+        path = self._fixture("v001_chapter_gap.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        v001 = [w for w in ctx.warnings if w.get("rule") == "V-001"]
+        self.assertEqual(len(v001), 1, "expected one V-001 gap warning")
+        self.assertIn("gap between", v001[0]["detail"])
+
+    def test_negative_continuous_no_warning(self):
+        path = self._fixture("v001_chapters_continuous.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        v001 = [w for w in ctx.warnings if w.get("rule") == "V-001"]
+        self.assertEqual(v001, [], "V-001 fired on continuous chapters")
+
+
+class Test_V002_HeadingStyleConsistency(BaseFixtureTest):
+    """V-002 signature-comparison check. Unit-test flavor: a fixture
+    where the deviant chapter wasn't classified as chapter_heading
+    doesn't exercise V-002 directly (C-001 only catches Heading2), so
+    V-001 catches the gap first. That's documented; V-002's direct
+    behavior is tested with a manufactured context.
+    """
+
+    def test_uniform_signatures_no_warning(self):
+        path = self._fixture("v001_chapters_continuous.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        v002 = [w for w in ctx.warnings if w.get("rule") == "V-002"]
+        self.assertEqual(v002, [])
+
+    def test_manufactured_mixed_signatures_flagged(self):
+        """Two chapter_heading blocks with different (type, heading_level)
+        signatures → V-002 emits a warning.
+        """
+        from lib.rules.base import RuleContext
+        from lib.rules.validation import V002_HeadingStyleConsistency
+        ctx = RuleContext(blocks=[
+            {"id": "b_000001", "type": "heading", "heading_level": 2,
+             "role": "chapter_heading", "chapter_number": 1,
+             "chapter_title": "One",
+             "spans": [{"text": "Chapter 1 One", "marks": []}]},
+            {"id": "b_000002", "type": "heading", "heading_level": 2,
+             "role": "chapter_heading", "chapter_number": 2,
+             "chapter_title": "Two",
+             "spans": [{"text": "Chapter 2 Two", "marks": []}]},
+            {"id": "b_000003", "type": "paragraph",
+             "role": "chapter_heading", "chapter_number": 3,
+             "chapter_title": "Three",
+             "spans": [{"text": "Chapter 3 Three", "marks": []}]},
+        ])
+        V002_HeadingStyleConsistency().run(ctx)
+        self.assertEqual(len(ctx.warnings), 1)
+        w = ctx.warnings[0]
+        self.assertEqual(w["rule"], "V-002")
+        self.assertIn("b_000003", w["blocks"])
+
+
+class Test_V003_SpaceLossHeuristic(BaseFixtureTest):
+
+    def test_positive_joined_words_flagged(self):
+        path = self._fixture("v003_joined_words.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        v003 = [w for w in ctx.warnings if w.get("rule") == "V-003"]
+        flagged_tokens = {w["detail"] for w in v003}
+        # Must catch at least one of "Theweather" / "thefirst" (both are
+        # function-word-led and fail the dictionary check).
+        self.assertTrue(
+            any("Theweather" in t or "theweather" in t.lower() for t in flagged_tokens)
+            or any("thefirst" in t.lower() for t in flagged_tokens),
+            f"V-003 did not flag expected function-word-led joins; got: {flagged_tokens}"
+        )
+
+    def test_negative_legitimate_compounds_not_flagged(self):
+        """thereon / ourselves / birthday / thereafter — all are real
+        words or start with function words that form real compounds.
+        Dictionary check suppresses all.
+        """
+        path = self._fixture("v003_legitimate_compounds.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        v003 = [w for w in ctx.warnings if w.get("rule") == "V-003"]
+        self.assertEqual(v003, [],
+                         f"V-003 false-positive: {[w['detail'] for w in v003]}")
+
+
+class Test_ArtifactSchemaEndToEnd(BaseFixtureTest):
+    """After iter 5 (terminal default lands), artifacts produced by the
+    full pipeline must validate against manuscript.v2.0.schema.json.
+    This is the first time I-2 holds end-to-end.
+    """
+
+    def test_title_page_fixture_produces_schema_valid_artifact(self):
+        path = self._fixture("c003_author_title_page.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        errors = sorted(self.validator.iter_errors(ctx.artifact),
+                        key=lambda e: list(e.absolute_path))
+        if errors:
+            for e in errors[:5]:
+                print(f"  schema error at {list(e.absolute_path)}: {e.message}")
+        self.assertEqual(errors, [], f"{len(errors)} schema errors")
+
+    def test_chapter_fixture_produces_schema_valid_artifact(self):
+        path = self._fixture("v001_chapters_continuous.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        errors = sorted(self.validator.iter_errors(ctx.artifact),
+                        key=lambda e: list(e.absolute_path))
+        if errors:
+            for e in errors[:5]:
+                print(f"  schema error at {list(e.absolute_path)}: {e.message}")
+        self.assertEqual(errors, [], f"{len(errors)} schema errors")
+
+
+class Test_V004_TrackedChangesResidueDetector(BaseFixtureTest):
+
+    def test_negative_clean_extraction_no_warning(self):
+        """When N-002 resolves tracked changes properly, V-004 emits
+        zero warnings. The n002 fixture exercises this path.
+        """
+        path = self._fixture("n002_tracked_changes.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        v004 = [w for w in ctx.warnings if w.get("rule") == "V-004"]
+        self.assertEqual(v004, [],
+                         "V-004 false-positive on a clean extraction")
+
+    def test_manufactured_literal_ins_marker_flagged(self):
+        """A block with a literal '<w:ins' in its text (simulating an
+        extractor bug) must be flagged by V-004.
+        """
+        from lib.rules.base import RuleContext
+        from lib.rules.validation import V004_TrackedChangesResidueDetector
+        ctx = RuleContext(blocks=[
+            {"id": "b_000001", "type": "paragraph",
+             "role": "body_paragraph",
+             "spans": [{"text": "This is fine.", "marks": []}]},
+            {"id": "b_000002", "type": "paragraph",
+             "role": "body_paragraph",
+             "spans": [{"text": "Leaked <w:ins> marker here.", "marks": []}]},
+        ])
+        V004_TrackedChangesResidueDetector().run(ctx)
+        v004 = [w for w in ctx.warnings if w.get("rule") == "V-004"]
+        self.assertEqual(len(v004), 1)
+        self.assertEqual(v004[0]["block_id"], "b_000002")
 
 
 if __name__ == "__main__":

@@ -27,8 +27,8 @@
     },
     "worker_version": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Worker 1 semantic version (e.g., \"5.0.0\"). Per I-8, this MUST match the w{worker_version} segment of the storage key."
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][A-Za-z0-9.]+)?$",
+      "description": "Worker 1 semantic version (e.g., \"5.0.0\" or \"5.0.0-a1\"). SemVer 2.0-compliant pre-release / build suffixes accepted. Per I-8, this MUST match the w{worker_version} segment of the storage key."
     },
     "rules_version": {
       "type": "string",

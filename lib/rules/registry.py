@@ -27,6 +27,12 @@ from .classification import (
     C004_FrontMatter,
     C005_BackMatter,
 )
+from .validation import (
+    V001_ChapterNumberContinuity,
+    V002_HeadingStyleConsistency,
+    V003_SpaceLossHeuristic,
+    V004_TrackedChangesResidueDetector,
+)
 
 
 RuleFactory = Callable[..., Rule]
@@ -54,11 +60,10 @@ RULE_REGISTRY: List[Dict[str, object]] = [
 
     {"id": "N-004", "phase": "normalize", "order": 1, "factory": N004_QuoteNormalization},
 
-    # --- Iteration 5 fills these in:
-    # {"id": "V-001", "phase": "validate",  "order": 1, "factory": ...},
-    # {"id": "V-002", "phase": "validate",  "order": 2, "factory": ...},
-    # {"id": "V-003", "phase": "validate",  "order": 3, "factory": ...},
-    # {"id": "V-004", "phase": "validate",  "order": 4, "factory": ...},
+    {"id": "V-001", "phase": "validate",  "order": 1, "factory": V001_ChapterNumberContinuity},
+    {"id": "V-002", "phase": "validate",  "order": 2, "factory": V002_HeadingStyleConsistency},
+    {"id": "V-003", "phase": "validate",  "order": 3, "factory": V003_SpaceLossHeuristic},
+    {"id": "V-004", "phase": "validate",  "order": 4, "factory": V004_TrackedChangesResidueDetector},
 
     # --- Iteration 6 fills this in:
     # {"id": "H-001", "phase": "emit",      "order": 1, "factory": ...},
