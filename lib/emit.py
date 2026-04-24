@@ -30,11 +30,16 @@ def build_artifact(
     processed_at: Optional[datetime] = None,
     processing_time_seconds: Optional[float] = None,
     dry_run: bool = False,
+    manuscript_meta: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Assemble the top-level v2.0 artifact object.
 
     Caller is responsible for filling source_meta with source_hash_sha256
     and ingested_at (the extractor doesn't know these).
+
+    manuscript_meta is optional; when present it's written at the
+    artifact top level per the v2.0 schema (populated by C-003 from the
+    title-page cluster).
     """
     processed_at = processed_at or datetime.now(timezone.utc)
     run_id = run_id or str(uuid4())
@@ -64,6 +69,8 @@ def build_artifact(
         artifact["processing"]["processing_time_seconds"] = processing_time_seconds
     if dry_run:
         artifact["processing"]["dry_run"] = True
+    if manuscript_meta is not None:
+        artifact["manuscript_meta"] = manuscript_meta
     return artifact
 
 

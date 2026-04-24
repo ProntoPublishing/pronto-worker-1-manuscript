@@ -517,12 +517,21 @@ def _detect_body_font_size(z: zipfile.ZipFile) -> Dict[str, Optional[int]]:
 
     Resolution order (first hit wins):
       1. styles.xml docDefaults/rPrDefault/rPr/sz — the document-declared
-         default body font size. This is the correct notion of "body size":
-         any paragraph that overrides it is intentionally larger or smaller.
+         default body font size. This is the correct notion of "body size"
+         in Word: any paragraph that overrides it is intentionally larger
+         or smaller.
       2. Median of explicit w:sz values on non-heading paragraphs. Used
          when docDefaults is absent; can be skewed by title-cluster
          paragraphs that set explicit sizes, so treated as a fallback.
       3. DOCX spec default (22 half-points = 11pt).
+
+    This function is intentionally DOCX-specific. The concept of "dominant
+    body font size" depends on the source format — a Markdown extractor
+    will derive it entirely differently (probably from a config value,
+    since Markdown has no explicit font sizes). Doc 22 §CIR should not
+    specify the resolution mechanism; it lives here in the extractor.
+    On the standing docs-hygiene punchlist as "extractor-level
+    documentation item" per Jesse's note on 2026-04-24.
     """
     # Preferred: styles.xml docDefaults.
     try:

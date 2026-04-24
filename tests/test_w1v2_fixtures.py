@@ -39,7 +39,7 @@ FIXTURES = REPO_ROOT / "tests" / "fixtures" / "v1"
 SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.0.schema.json"
 
 WORKER_VERSION = "5.0.0a1"
-RULES_VERSION = "1.0.1"
+RULES_VERSION = "1.0.2"
 
 
 def _schema_validator():
@@ -88,6 +88,7 @@ def _process_fixture(path: Path) -> tuple[RuleContext, Exception | None]:
         service_id="rec_test_service",
         project_id="rec_test_project",
         source_meta=source_meta,
+        manuscript_meta=ctx.manuscript_meta,
     )
     return ctx, None
 
@@ -154,7 +155,7 @@ class Test_R001_UnsupportedFormat(BaseFixtureTest):
         )
         self.assertEqual(
             key,
-            "services/TALLY-8F3Q/INTFMT/manuscript/v2.0/w5.0.0a1-r1.0.1/manuscript.json",
+            "services/TALLY-8F3Q/INTFMT/manuscript/v2.0/w5.0.0a1-r1.0.2/manuscript.json",
         )
 
 
@@ -531,6 +532,65 @@ class Test_C005_BackMatter(BaseFixtureTest):
         C005_BackMatter().run(ctx)
         self.assertEqual(ctx.blocks[0]["role"], "part_divider",
                          "I-10 violated: C-005 overwrote a part_divider role")
+
+
+class Test_N004_QuoteNormalization(BaseFixtureTest):
+    """N-004 normalize, order 1 (Layer 1b: applied-but-logged)."""
+
+    def test_positive_mixed_quotes_curlied(self):
+        path = self._fixture("n004_mixed_quotes.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        # After N-004, no straight quotes should remain in non-preformatted
+        # blocks.
+        for b in ctx.blocks:
+            if b.get("preformatted"):
+                continue
+            for text in _block_texts([b]):
+                self.assertNotIn('"', text, f"straight double quote remained: {text!r}")
+                # Allow straight single quote only as an apostrophe-less
+                # context — with the closing-context default mapping to
+                # U+2019, nothing should remain after a successful run.
+                self.assertNotIn("'", text, f"straight single quote remained: {text!r}")
+
+    def test_positive_applied_rules_entry(self):
+        """N-004 is Layer 1b: MUST emit one applied_rules[] entry with
+        rule=N-004, a count, and the list of block ids it touched.
+        """
+        path = self._fixture("n004_mixed_quotes.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        n004 = [r for r in ctx.applied_rules if r.get("rule") == "N-004"]
+        self.assertEqual(len(n004), 1, "expected exactly one N-004 applied_rules entry")
+        entry = n004[0]
+        self.assertEqual(entry["version"], "v1")
+        self.assertGreater(entry["count"], 0)
+        self.assertGreater(len(entry["block_ids"]), 0)
+
+    def test_negative_preformatted_preserves_straight_quotes(self):
+        """The N-004 exemption: preformatted paragraphs keep straight
+        quotes verbatim.
+        """
+        path = self._fixture("n004_code_quotes_preserved.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        preformatted = [b for b in ctx.blocks if b.get("preformatted") is True]
+        self.assertTrue(preformatted)
+        for b in preformatted:
+            joined = "".join(s.get("text", "") for s in b.get("spans", []))
+            self.assertIn('"', joined, "N-004 touched a preformatted block (double quotes)")
+            self.assertIn("'", joined, "N-004 touched a preformatted block (single quotes)")
+
+    def test_apostrophe_in_contraction_is_right_single(self):
+        """"don't" / "they're" — apostrophes inside words must become
+        U+2019 (right single quote), the correct typographic apostrophe.
+        """
+        path = self._fixture("n004_mixed_quotes.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        # The fixture contains "she'd" via an inline apostrophe.
+        joined = " ".join(_block_texts(ctx.blocks))
+        self.assertIn("she\u2019d", joined, "contraction apostrophe not normalized")
 
 
 class Test_C003_TitlePage(BaseFixtureTest):

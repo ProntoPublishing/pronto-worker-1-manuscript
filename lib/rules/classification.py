@@ -362,13 +362,40 @@ class C003_TitlePage:
         if not cluster_members:
             return
 
-        # Assign role + a positional note. First member = title,
-        # subsequent large_font = subtitle, final non-large member = author.
+        # Assign role + positional note. First member = title, subsequent
+        # large_font members = subtitle (joined if there are several),
+        # non-large_font trailing member = author/byline. The positional
+        # tag goes on each block's classification_notes[] for traceability;
+        # the authoritative extraction lands on ctx.manuscript_meta, which
+        # emit() surfaces at the artifact top level.
+        extracted = {"title": None, "subtitle": None, "author": None}
+        subtitle_parts: List[str] = []
         for idx, i in enumerate(cluster_members):
             block = ctx.blocks[i]
             block["role"] = "title_page"
             positional = _title_page_positional_role(block, idx, cluster_members, ctx.blocks)
             _add_note(block, f"title_page positional role: {positional}")
+
+            text = _block_text(block).strip()
+            if positional == "title" and not extracted["title"]:
+                extracted["title"] = text or None
+            elif positional == "subtitle":
+                if text:
+                    subtitle_parts.append(text)
+            elif positional == "author_or_byline" and not extracted["author"]:
+                extracted["author"] = text or None
+
+        if subtitle_parts:
+            extracted["subtitle"] = " ".join(subtitle_parts)
+
+        # Merge with any prior manuscript_meta (classifier-order doesn't
+        # currently have another writer, but keep the merge defensive).
+        if ctx.manuscript_meta is None:
+            ctx.manuscript_meta = extracted
+        else:
+            for k, v in extracted.items():
+                if v is not None and not ctx.manuscript_meta.get(k):
+                    ctx.manuscript_meta[k] = v
 
 
 def _title_page_positional_role(
@@ -420,20 +447,17 @@ def _add_note(block: Dict[str, Any], note: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Iter-3 schema gap (flagged for Jesse)
+# title_page extraction — resolution
 # ---------------------------------------------------------------------------
 #
-# C-003's rule entry says "extract {title, subtitle, author}" as
-# title_page role-specific metadata. The v2.0 schema as sketched does not
-# define block-level fields for title, subtitle, or author — only the
-# fields for chapter_heading / part_divider / front_matter / back_matter.
-# This iter records the cluster assignment via role=title_page and
-# leaves the structured extraction at the classification_notes[] level.
-# Two resolution paths, both v1.0.X / schema follow-ups:
-#   (a) Add `title`, `subtitle`, `author` as optional block-level fields
-#       on title_page role (schema + C-003 extraction pass).
-#   (b) Hoist title/subtitle/author into a top-level `manuscript_meta`
-#       object on the artifact; C-003 writes there instead. This is
-#       structurally cleaner (one place per manuscript, not per block)
-#       but breaks the I-3 "blocks in document order" model if we want
-#       back-references from the cluster members.
+# Iter-3 flagged a schema gap: C-003's rule entry says "extract {title,
+# subtitle, author}" but the v2.0 block schema has no per-block fields
+# for those. Resolved in iter-4 prep via option (b): a top-level
+# `manuscript_meta: {title, subtitle, author}` object on the artifact
+# (schema updated; emit threads ctx.manuscript_meta through).
+#
+# C-003 writes to `ctx.manuscript_meta`. Per-block positional tags
+# ("title" / "subtitle" / "author_or_byline") remain in
+# `classification_notes[]` for cluster traceability. The authoritative
+# read surface for downstream workers and reconciliation rules is
+# `artifact.manuscript_meta`.

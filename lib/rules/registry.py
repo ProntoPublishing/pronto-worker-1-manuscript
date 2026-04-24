@@ -18,6 +18,7 @@ from .rejection import R001_UnsupportedFormat
 from .normalization import (
     N001_CollapseDoubleSpaces,
     N003_StripZeroWidthAndLayoutHacks,
+    N004_QuoteNormalization,
 )
 from .classification import (
     C001_ChapterHeading,
@@ -51,8 +52,7 @@ RULE_REGISTRY: List[Dict[str, object]] = [
     {"id": "C-005", "phase": "classify",  "order": 4, "factory": C005_BackMatter},
     {"id": "C-003", "phase": "classify",  "order": 5, "factory": C003_TitlePage},
 
-    # --- Iteration 4 fills these in:
-    # {"id": "N-004", "phase": "normalize", "order": 1, "factory": ...},
+    {"id": "N-004", "phase": "normalize", "order": 1, "factory": N004_QuoteNormalization},
 
     # --- Iteration 5 fills these in:
     # {"id": "V-001", "phase": "validate",  "order": 1, "factory": ...},

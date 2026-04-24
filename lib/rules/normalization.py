@@ -3,8 +3,6 @@ Layer 1 normalization rules.
 
 Per Doc 22 §Layer 1: transformations applied during processing. Layer 1a
 is silent (no applied_rules[] entry); Layer 1b is applied-but-logged.
-This module currently carries Layer 1a rules only; N-004 (Layer 1b,
-normalize phase) lands in a later iteration.
 
 All Layer 1 rules honor the preformatted exemption: a block with
 `preformatted: true` (or CIR type in {"code", "preformatted_block"}) is
@@ -157,3 +155,150 @@ class N003_StripZeroWidthAndLayoutHacks:
                 text = text.replace(ch, "")
         text = _NBSP_RUN_RE.sub(" ", text)
         return text
+
+
+# ---------------------------------------------------------------------------
+# N-004: Quote normalization (straight → curly)
+# ---------------------------------------------------------------------------
+
+# Word-boundary characters used to distinguish opening vs closing context.
+# A straight quote is "opening" when preceded by nothing, whitespace, an
+# opening bracket/brace, an em/en-dash, or another opening quote.
+_OPEN_CONTEXT = set(" \t\n\r([{<\u2014\u2013\u2018\u201C")
+
+# Hyphenation-like neighbors that don't change opening/closing logic
+# but matter for word-boundary detection.
+_WORD_CHAR_RE = re.compile(r"\w")
+
+
+class N004_QuoteNormalization:
+    """N-004 v1: straight → curly quote normalization.
+
+    Layer 1b (applied-but-logged). Phase: normalize. Order: 1.
+
+    Behavior per Doc 22 v1 N-004:
+      - Convert straight quotes (") and (') to directional equivalents
+        (U+201C/U+201D for double, U+2018/U+2019 for single) based on
+        opening-vs-closing context.
+      - Exception: blocks tagged preformatted, code, preformatted_block
+        are exempt.
+      - Emits one applied_rules[] entry per block touched: {rule: "N-004",
+        version: "v1", count: N, block_ids: [...]} — aggregated to a
+        single entry per rule run with total count and the list of
+        affected block ids.
+
+    Opening-vs-closing heuristic:
+      - If the character before the straight quote is absent, whitespace,
+        or an opening punctuation/dash/open-quote → OPENING.
+      - Otherwise → CLOSING.
+      - Apostrophes inside words ("don't", "they're") are handled by the
+        "character before is a word character" branch of the CLOSING
+        case, which maps to U+2019 — the correct typographic apostrophe.
+
+    Ordering note on span boundaries: in a multi-span paragraph, the
+    character immediately preceding a straight quote may live at the end
+    of the prior span. The implementation walks spans in sequence and
+    threads a `prev_char` state through the walk so cross-span context
+    resolves correctly.
+    """
+
+    id = "N-004"
+    phase = "normalize"
+    order = 1
+    version = "v1"
+
+    def run(self, ctx: RuleContext) -> None:
+        total_count = 0
+        affected_ids: List[str] = []
+
+        for block in ctx.blocks:
+            if _is_exempt(block):
+                continue
+            before = _serialize_block_text(block)
+            _normalize_quotes_in_block(block)
+            after = _serialize_block_text(block)
+            if before != after:
+                # Count the net increase in curly quotes — each curly
+                # quote corresponds to one normalization.
+                delta = _curly_delta(before, after)
+                total_count += max(delta, 1)
+                affected_ids.append(block.get("id", "?"))
+
+        if total_count > 0:
+            ctx.applied_rules.append({
+                "rule": "N-004",
+                "version": "v1",
+                "count": total_count,
+                "block_ids": affected_ids,
+            })
+
+
+# ---------------------------------------------------------------------------
+# N-004 helpers
+# ---------------------------------------------------------------------------
+
+def _serialize_block_text(block: Dict[str, Any]) -> str:
+    """Concatenate a block's text content; used for before/after compare."""
+    if "spans" in block:
+        return "".join(s.get("text", "") for s in block["spans"])
+    return block.get("text", "") or ""
+
+
+def _curly_delta(before: str, after: str) -> int:
+    """Count of curly-quote chars in `after` minus in `before`."""
+    curly = ("\u201C", "\u201D", "\u2018", "\u2019")
+    return sum(after.count(c) for c in curly) - sum(before.count(c) for c in curly)
+
+
+def _normalize_quotes_in_block(block: Dict[str, Any]) -> None:
+    """Apply the opening/closing heuristic across the block's spans or
+    text, preserving structure. prev_char is threaded across span
+    boundaries.
+    """
+    if "spans" in block:
+        prev_char = ""
+        for span in block["spans"]:
+            new_text, prev_char = _normalize_quotes(span.get("text", ""), prev_char)
+            span["text"] = new_text
+    elif "text" in block:
+        block["text"], _ = _normalize_quotes(block["text"], "")
+
+
+def _normalize_quotes(text: str, prev_char: str) -> tuple:
+    """Return (new_text, last_char). Straight " and ' are replaced by
+    directional equivalents based on `prev_char` (plus text[i-1] as we
+    scan) and what follows.
+    """
+    out: List[str] = []
+    for i, ch in enumerate(text):
+        left = text[i - 1] if i > 0 else prev_char
+        if ch == '"':
+            if _is_opening_context(left):
+                out.append("\u201C")
+            else:
+                out.append("\u201D")
+        elif ch == "'":
+            if _is_opening_context(left):
+                out.append("\u2018")
+            else:
+                # Includes apostrophes in contractions: a word char to
+                # the left → closing single quote = U+2019.
+                out.append("\u2019")
+        else:
+            out.append(ch)
+    new_text = "".join(out)
+    last = new_text[-1] if new_text else prev_char
+    return new_text, last
+
+
+def _is_opening_context(left: str) -> bool:
+    """Straight quote at this position opens a quotation if `left` is
+    empty, whitespace, an opening punctuation, a dash, or an already-
+    opened quote.
+    """
+    if not left:
+        return True
+    if left in _OPEN_CONTEXT:
+        return True
+    # Everything else (word char, closing bracket, punctuation) → closing.
+    return False

@@ -23,6 +23,11 @@ class RuleContext:
         applied_rules: L1b and L5 rule provenance (I-9).
         warnings: L3 validator output (I-9).
         rule_faults: L_any rule exceptions (I-7). Populated by the pipeline.
+        manuscript_meta: Optional {title, subtitle, author} populated by
+            C-003 from the title-page cluster. Any field may be None.
+            Surfaces at the artifact top level via emit.build_artifact.
+            Intake-vs-manuscript reconciliation (v1.1 punchlist) reads
+            from here on the extraction side.
         artifact: Top-level artifact under construction. Includes source,
             processing, version fields. Rules may read but typically don't
             mutate.
@@ -33,6 +38,7 @@ class RuleContext:
     applied_rules: List[Dict[str, Any]] = field(default_factory=list)
     warnings: List[Dict[str, Any]] = field(default_factory=list)
     rule_faults: List[Dict[str, Any]] = field(default_factory=list)
+    manuscript_meta: Optional[Dict[str, Any]] = None
     artifact: Dict[str, Any] = field(default_factory=dict)
     extras: Dict[str, Any] = field(default_factory=dict)
 

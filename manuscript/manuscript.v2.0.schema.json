@@ -113,6 +113,16 @@
       "type": "array",
       "description": "Per I-7: exceptions raised during rule execution. Empty on a clean run. Fault-safe emission means the artifact still ships even when this array is non-empty; the Service state transition is governed by the Operational Policy fault-threshold config.",
       "items": { "$ref": "#/definitions/rule_fault" }
+    },
+    "manuscript_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Top-level manuscript metadata extracted by C-003 (title page) from the author-supplied opening cluster. Optional — absent when no title_page cluster was classified. Any field may be null when the classifier could not extract it confidently. Intake-vs-manuscript reconciliation (v1.1 punchlist) reads from this object on the extraction side.",
+      "properties": {
+        "title":    { "type": ["string", "null"], "description": "Book title extracted from the title-page cluster." },
+        "subtitle": { "type": ["string", "null"], "description": "Book subtitle, when present." },
+        "author":   { "type": ["string", "null"], "description": "Author name / byline, when present." }
+      }
     }
   },
 
