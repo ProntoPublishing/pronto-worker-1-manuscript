@@ -30,6 +30,15 @@ Architecture:
 Author: Pronto Publishing
 Version: 4.1.0
 Date: 2026-01-05
+
+Contract v1.1 integration (2026-04-23):
+  Step 8 of process_service now calls `validate_and_normalize_output` from
+  `lib.output_validator` before the legacy JSON-schema validator and before
+  R2 upload. Any artifact that reaches upload has been normalized to the
+  spans-only contract and stamped `schema_version="1.0"`. Relies on the
+  updated `lib.block_extractor` (v4.2.0) emitting complete `meta.list_group`,
+  `meta.list_type`, and `meta.chapter_number` natively. Legacy JSON-schema
+  validator retained alongside for now (REVIEW_NOTES M9 tracks consolidation).
 """
 
 import os
@@ -54,6 +63,7 @@ from lib.block_extractor import BlockExtractor
 from lib.warning_detector import WarningDetector
 from lib.artifact_builder import ArtifactBuilder
 from lib.artifact_validator import validate_artifact
+from lib.output_validator import validate_and_normalize_output
 
 # Configure logging
 logging.basicConfig(
@@ -182,12 +192,26 @@ class ManuscriptProcessor:
                 file_hash_sha256=file_hash_sha256,
                 ingested_at=ingested_at
             )
-            
-            # 8. Validate artifact
+
+            # 8a. Normalize + validate against the contract v1.1 shared schema.
+            # This is the Worker 1 ↔ Worker 2 contract surface: any artifact
+            # that passes here is guaranteed to use spans-only, have complete
+            # list/chapter metadata, and stamp schema_version="1.0". Raises
+            # on schema violation.
+            artifact, contract_report = validate_and_normalize_output(artifact)
+            if contract_report['warnings']:
+                logger.warning(
+                    f"Contract-validator warnings ({len(contract_report['warnings'])}): "
+                    + " | ".join(contract_report['warnings'][:5])
+                )
+            logger.info(f"Contract validation passed: {len(contract_report['fixes_applied'])} normalizations applied")
+
+            # 8b. Legacy JSON-schema validation (kept alongside 8a for now;
+            # REVIEW_NOTES M9 tracks collapsing the two validators).
             validation_result = validate_artifact(artifact, "manuscript", "1.0")
             if not validation_result['valid']:
                 raise ValueError(f"Artifact validation failed: {validation_result['errors']}")
-            
+
             logger.info("Artifact validation passed")
             
             # 9. Upload to R2
