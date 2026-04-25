@@ -302,3 +302,151 @@ def _is_opening_context(left: str) -> bool:
         return True
     # Everything else (word char, closing bracket, punctuation) → closing.
     return False
+
+
+# ---------------------------------------------------------------------------
+# N-005: Strip external-source license boilerplate (Doc 22 v1.0.3)
+# ---------------------------------------------------------------------------
+#
+# Public-domain text aggregators (Project Gutenberg, etc.) embed license
+# boilerplate around the actual book content. C-001 promotes any
+# heading-level-2 to chapter_heading, so the boilerplate's license headings
+# become fake chapters in the rendered output. N-005 strips the boilerplate
+# in the strip phase, before any classifier runs, so C-001 sees only the
+# author's chapters.
+#
+# Note on layer assignment: Doc 22 v1.0.3 amendments mark N-005 as Layer 1a
+# (silent) but specify an applied_rules[] entry. That's a precedent break
+# from N-001/N-002/N-003 (truly silent, no logging). Implementing as written:
+# a single summary entry with a count is auditable but not noisy. Worth
+# settling in a future amendments revision; flagged in the engagement
+# commit body.
+
+# Canonical license-boilerplate patterns. Frozen for v1; expansion requires
+# a Doc 22 amendment.
+_N005_LICENSE_PATTERNS = (
+    re.compile(r"^the project gutenberg ebook", re.IGNORECASE),
+    re.compile(r"^\*\*\* ?start of (the |this )?project gutenberg ebook", re.IGNORECASE),
+    re.compile(r"^\*\*\* ?end of (the |this )?project gutenberg ebook", re.IGNORECASE),
+    re.compile(r"^section \d+\. (information|general|title)", re.IGNORECASE),
+    re.compile(r"^this ebook is for the use of", re.IGNORECASE),
+    re.compile(r"^updated editions will replace", re.IGNORECASE),
+)
+
+
+def _n005_block_text(block: Dict[str, Any]) -> str:
+    """Concatenate a block's text content for pattern matching.
+    Local copy to avoid pulling the classifier helper down into the
+    strip phase."""
+    if "spans" in block:
+        return "".join(s.get("text", "") for s in block["spans"])
+    return block.get("text", "") or ""
+
+
+def _n005_is_license_match(block: Dict[str, Any]) -> bool:
+    """True if the block's text matches any canonical license-boilerplate
+    pattern. Matches against the leading-whitespace-stripped text so
+    indented license text still triggers the rule.
+    """
+    text = _n005_block_text(block).strip()
+    if not text:
+        return False
+    for pat in _N005_LICENSE_PATTERNS:
+        if pat.match(text):
+            return True
+    return False
+
+
+def _n005_is_h1_or_h2_heading(block: Dict[str, Any]) -> bool:
+    return (
+        block.get("type") == "heading"
+        and block.get("heading_level") in (1, 2)
+    )
+
+
+class N005_StripExternalLicenseBoilerplate:
+    """N-005 v1: Strip external-source license boilerplate before classify.
+
+    Layer 1a (silent), strip phase, order 3.
+
+    Behavior per Doc 22 v1.0.3 N-005 (with v1.0.1-of-the-amendments
+    end-marker semantic):
+
+      - Walk blocks in document order. For each block whose text
+        matches a canonical license pattern (see _N005_LICENSE_PATTERNS):
+
+          * If the matched block is a heading: mark for removal, then
+            walk forward removing every subsequent block UNTIL the
+            next heading-level-1 or heading-level-2 whose text does
+            NOT match a license pattern, OR end-of-document. The
+            non-license heading is the stop marker and is preserved.
+            License headings encountered along the way are removed
+            and the walk continues — this is the negation guard the
+            amendments doc names: Gutenberg variants embed multiple
+            license-section headings within the boilerplate body, and
+            the walk must consume all of them rather than stopping at
+            the first.
+
+          * If the matched block is a paragraph (rare; Gutenberg
+            preamble paragraphs are usually inside the heading-anchored
+            range above), mark only that block for removal.
+
+      - After the full pass, remove all marked blocks in one batch and
+        emit a single applied_rules[] summary entry with the count
+        across all removed blocks.
+
+    Exemption: preformatted blocks (code / preformatted_block / blocks
+    with preformatted: true) are NOT inspected by N-005. License text
+    is never preformatted in practice; the exemption keeps the rule
+    out of the way of legitimate verbatim content.
+    """
+
+    id = "N-005"
+    phase = "strip"
+    order = 3
+    version = "v1"
+
+    def run(self, ctx: RuleContext) -> None:
+        if not ctx.blocks:
+            return
+
+        to_remove: set[int] = set()
+        i = 0
+        n = len(ctx.blocks)
+
+        while i < n:
+            block = ctx.blocks[i]
+
+            if _is_exempt(block) or not _n005_is_license_match(block):
+                i += 1
+                continue
+
+            # Found a license-matching block.
+            to_remove.add(i)
+
+            if block.get("type") == "heading":
+                # Walk forward until we hit a non-license h1/h2 OR EOF.
+                j = i + 1
+                while j < n:
+                    nxt = ctx.blocks[j]
+                    if _n005_is_h1_or_h2_heading(nxt) and not _n005_is_license_match(nxt):
+                        # Non-license heading — stop. Do not remove it.
+                        break
+                    to_remove.add(j)
+                    j += 1
+                i = j  # resume scan from the stop marker (or n if EOF)
+            else:
+                # Paragraph match outside any heading-anchored range —
+                # remove just this block and continue scanning.
+                i += 1
+
+        if not to_remove:
+            return
+
+        count = len(to_remove)
+        ctx.blocks[:] = [b for idx, b in enumerate(ctx.blocks) if idx not in to_remove]
+        ctx.applied_rules.append({
+            "rule": "N-005",
+            "version": "v1",
+            "count": count,
+        })

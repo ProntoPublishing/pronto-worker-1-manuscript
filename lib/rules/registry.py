@@ -19,6 +19,7 @@ from .normalization import (
     N001_CollapseDoubleSpaces,
     N003_StripZeroWidthAndLayoutHacks,
     N004_QuoteNormalization,
+    N005_StripExternalLicenseBoilerplate,
 )
 from .classification import (
     C001_ChapterHeading,
@@ -52,6 +53,7 @@ RULE_REGISTRY: List[Dict[str, object]] = [
 
     {"id": "N-001", "phase": "strip",     "order": 1, "factory": N001_CollapseDoubleSpaces},
     {"id": "N-003", "phase": "strip",     "order": 2, "factory": N003_StripZeroWidthAndLayoutHacks},
+    {"id": "N-005", "phase": "strip",     "order": 3, "factory": N005_StripExternalLicenseBoilerplate},
 
     {"id": "C-001", "phase": "classify",  "order": 1, "factory": C001_ChapterHeading},
     {"id": "C-002", "phase": "classify",  "order": 2, "factory": C002_PartDivider},
