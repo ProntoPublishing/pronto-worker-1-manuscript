@@ -75,7 +75,7 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 
 WORKER_NAME = "worker_1_manuscript_processor"
 WORKER_VERSION = "5.0.0-a1"   # SemVer 2.0 pre-release. Bump to "5.0.0" on release.
-RULES_VERSION = "1.0.2"       # Doc 22 version this worker implements.
+RULES_VERSION = "1.0.3"       # Doc 22 version this worker implements.
 
 # Fault-threshold policy from Doc 22 §Operational Policy (v1.0 defaults).
 MAX_LAYER_2_FAULTS_BEFORE_FAIL = 3
@@ -548,8 +548,16 @@ class ManuscriptProcessor:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    # --local mode bypasses Airtable / R2 / HTTP. Runs the pure pipeline
+    # against a fixture DOCX. See lib/local_runner.py.
+    if len(sys.argv) >= 2 and sys.argv[1] == "--local":
+        _run_local_mode(sys.argv[2:])
+        return
+
     if len(sys.argv) < 2:
-        print("Usage: python pronto_worker_1.py <service_id>")
+        print("Usage:")
+        print("  python pronto_worker_1.py <service_id>")
+        print("  python pronto_worker_1.py --local --input <docx> --output <json> [--no-deterministic]")
         sys.exit(1)
     service_id = sys.argv[1]
 
@@ -567,6 +575,58 @@ def main() -> None:
     result = processor.process_service(service_id)
     print(json.dumps(result, indent=2))
     sys.exit(0 if result.get("success") else 1)
+
+
+def _run_local_mode(argv: List[str]) -> None:
+    """Handler for `python pronto_worker_1.py --local …`.
+
+    Bypasses Airtable / R2 / HTTP. Runs the pure pipeline against a
+    fixture DOCX and writes a deterministic manuscript.v2.0 JSON.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(
+        prog="pronto_worker_1 --local",
+        description=(
+            "Run W1 pipeline against a local DOCX fixture. Bypasses "
+            "Airtable/R2/HTTP. Output is deterministic by default."
+        ),
+    )
+    parser.add_argument("--input", required=True,
+                        help="Path to source DOCX (or other ingest-supported format).")
+    parser.add_argument("--output", required=True,
+                        help="Path to write the manuscript.v2.0 JSON artifact.")
+    parser.add_argument("--no-deterministic", action="store_true",
+                        help="Use real timestamps and run_id (default: pinned).")
+    args = parser.parse_args(argv)
+
+    from lib.local_runner import run_local
+    result = run_local(
+        input_path=args.input,
+        output_path=args.output,
+        deterministic=not args.no_deterministic,
+        worker_version=WORKER_VERSION,
+        rules_version=RULES_VERSION,
+    )
+
+    if result.rejected:
+        print(json.dumps({
+            "success": False,
+            "status": "rejected",
+            "rule": result.rejection_rule,
+            "message": result.rejection_message,
+        }, indent=2))
+        sys.exit(1)
+
+    print(json.dumps({
+        "success": True,
+        "status": "complete",
+        "output": str(args.output),
+        "blocks": result.blocks_count,
+        "applied_rules": result.applied_rules_count,
+        "warnings": result.warnings_count,
+        "rule_faults": result.rule_faults_count,
+    }, indent=2))
+    sys.exit(0)
 
 
 if __name__ == "__main__":
