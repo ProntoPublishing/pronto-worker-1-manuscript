@@ -1,0 +1,376 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pronto.publishing/schemas/manuscript.v2.0.json",
+  "title": "Manuscript Artifact v2.0",
+  "description": "The manuscript.v2.0 artifact contract. Produced by Worker 1 (v5.0+). Implements Doc 22 v1.0.1 normalization rules and W1 Invariants I-1 through I-10. This is a design sketch; see companion README.md for open questions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "worker_version",
+    "rules_version",
+    "artifact_type",
+    "artifact_id",
+    "service_id",
+    "source",
+    "processing",
+    "content",
+    "applied_rules",
+    "warnings",
+    "rule_faults"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["2.0"],
+      "description": "Schema version. v2.0 artifacts MUST declare \"2.0\". Per I-8, this value MUST match the schema-version segment of the artifact's storage key."
+    },
+    "worker_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][A-Za-z0-9.]+)?$",
+      "description": "Worker 1 semantic version (e.g., \"5.0.0\" or \"5.0.0-a1\"). SemVer 2.0-compliant pre-release / build suffixes accepted. Per I-8, this MUST match the w{worker_version} segment of the storage key."
+    },
+    "rules_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Doc 22 rule-set version (e.g., \"1.0.1\"). Per I-8, this MUST match the r{rules_version} segment of the storage key. Traceability back to the rule set that produced the artifact."
+    },
+    "artifact_type": {
+      "type": "string",
+      "const": "manuscript",
+      "description": "Artifact type discriminator. Always \"manuscript\" for this schema."
+    },
+    "artifact_id": {
+      "type": "string",
+      "description": "Unique id for this specific artifact instance."
+    },
+    "service_id": {
+      "type": "string",
+      "description": "Airtable Service record id this artifact was produced for."
+    },
+    "parent_artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/parent_artifact" },
+      "description": "Optional lineage — prior artifacts this one derives from. Typically empty for manuscript.v2.0 (the source is a DOCX, not another artifact)."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original_filename", "original_format", "source_hash_sha256", "ingested_at"],
+      "properties": {
+        "original_filename":       { "type": "string" },
+        "original_format":         { "type": "string", "enum": ["docx"] },
+        "original_file_size_bytes": { "type": "integer", "minimum": 0 },
+        "source_hash_sha256":      { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "ingested_at":             { "type": "string", "format": "date-time" },
+        "source_url":              { "type": "string", "format": "uri" }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worker_name", "run_id", "project_id", "processed_at"],
+      "properties": {
+        "worker_name":              { "type": "string", "const": "worker_1_manuscript_processor" },
+        "run_id":                   { "type": "string", "description": "Unique per processing run." },
+        "project_id":               { "type": "string", "description": "Airtable Project record id." },
+        "processed_at":             { "type": "string", "format": "date-time" },
+        "processing_time_seconds":  { "type": "number", "minimum": 0 },
+        "dry_run":                  { "type": "boolean" }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocks"],
+      "properties": {
+        "language":          { "type": "string", "description": "ISO 639-1 language code (e.g., \"en\")." },
+        "reading_direction": { "type": "string", "enum": ["ltr", "rtl"] },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/block" },
+          "description": "Ordered blocks per I-3 (document order preserved)."
+        },
+        "stats": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional summary stats (word count, chapter count, etc.). Informational; rules do not consume."
+        }
+      }
+    },
+    "applied_rules": {
+      "type": "array",
+      "description": "Per I-9: every L1b rule that fired and every L5 default applied, with provenance. Absence of an entry means the rule did not fire.",
+      "items": { "$ref": "#/definitions/applied_rule" }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Per I-9: every Layer 3 warning raised during validation.",
+      "items": { "$ref": "#/definitions/warning" }
+    },
+    "rule_faults": {
+      "type": "array",
+      "description": "Per I-7: exceptions raised during rule execution. Empty on a clean run. Fault-safe emission means the artifact still ships even when this array is non-empty; the Service state transition is governed by the Operational Policy fault-threshold config.",
+      "items": { "$ref": "#/definitions/rule_fault" }
+    },
+    "manuscript_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Top-level manuscript metadata extracted by C-003 (title page) from the author-supplied opening cluster. Optional — absent when no title_page cluster was classified. Any field may be null when the classifier could not extract it confidently. Intake-vs-manuscript reconciliation (v1.1 punchlist) reads from this object on the extraction side.",
+      "properties": {
+        "title":    { "type": ["string", "null"], "description": "Book title extracted from the title-page cluster." },
+        "subtitle": { "type": ["string", "null"], "description": "Book subtitle, when present." },
+        "author":   { "type": ["string", "null"], "description": "Author name / byline, when present." }
+      }
+    }
+  },
+
+  "definitions": {
+
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "role"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^b_[0-9]{6,}$",
+          "description": "Stable unique block id per I-1. Six-digit zero-padded sequence."
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Extractor-specific origin pointer. Survives serialization (per CIR §Block Structure)."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "paragraph",
+            "heading",
+            "list_item",
+            "blockquote",
+            "table",
+            "image",
+            "code",
+            "preformatted_block",
+            "footnote",
+            "page_break",
+            "horizontal_rule"
+          ],
+          "description": "Structural CIR type from the extractor. Set before Classify phase."
+        },
+        "heading_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6,
+          "description": "Required when type == \"heading\". Absent otherwise."
+        },
+        "text":  { "type": "string", "description": "Plain-text content. Mutually exclusive with spans[]." },
+        "spans": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/span" },
+          "description": "Rich-formatted content. Mutually exclusive with text."
+        },
+        "style_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "centered", "right_aligned", "justified",
+              "bold", "italic", "underline", "strikethrough", "small_caps",
+              "large_font", "small_font",
+              "indented", "outdented",
+              "empty_line"
+            ]
+          },
+          "description": "Frozen CIR style-tag vocabulary (Doc 22 §CIR Block Structure). Extractors MUST NOT emit tags outside this set without a schema revision."
+        },
+        "preformatted": {
+          "type": "boolean",
+          "description": "Verbatim-content flag. Orthogonal to type; can be true on any block type. preformatted_block always carries true."
+        },
+        "footnote_ref": {
+          "type": "string",
+          "pattern": "^b_[0-9]{6,}$",
+          "description": "Present only on footnote blocks. Id of the origin paragraph that anchored this footnote in source."
+        },
+        "source_paragraph_id": {
+          "type": "string",
+          "description": "Present on the two halves produced when an inline page break splits a source paragraph. Shared across both halves."
+        },
+
+        "role": {
+          "type": "string",
+          "enum": [
+            "title_page",
+            "front_matter",
+            "part_divider",
+            "chapter_heading",
+            "body_paragraph",
+            "scene_break",
+            "back_matter",
+            "heading",
+            "list_item",
+            "blockquote",
+            "table",
+            "image",
+            "code_block",
+            "footnote",
+            "structural"
+          ],
+          "description": "Semantic role assigned during Classify phase per Doc 22 §Layer 2 (v1.0.1 enum). Required on every block per I-2; never null. Terminal default applies when no classifier fires — see Doc 22 v1.0.1 Patch 2. NOTE: CIR-type → role mapping is pending in Doc 22 v1.0.2 (schema README, open question Q1)."
+        },
+        "classification_notes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Populated when the classifier used its unknown exit, hit terminal default, or otherwise recorded uncertainty."
+        },
+
+        "chapter_number": {
+          "type": ["integer", "string", "null"],
+          "description": "Present on role=chapter_heading. Integer when extractable from heading text; null when unextractable. String for e.g. \"I\" / \"Five\" where the manuscript uses non-arabic numbering (per C-001)."
+        },
+        "chapter_title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Present on role=chapter_heading. Per I-4 (v1.0.1) never null and never empty. Synthesized as \"Chapter <n>\" for number-only headings per C-001 v1.0.1."
+        },
+        "part_number": {
+          "type": ["integer", "string", "null"],
+          "description": "Present on role=part_divider."
+        },
+        "part_title": {
+          "type": "string",
+          "description": "Present on role=part_divider."
+        },
+        "force_page_break": {
+          "type": "boolean",
+          "description": "Per I-5, always true on role=part_divider blocks. Downstream renderers may treat as authoritative."
+        },
+        "subtype": {
+          "type": "string",
+          "description": "Present on role=front_matter (e.g., dedication, preface, foreword, introduction, epigraph, note_to_reader, prologue, generic) and role=back_matter (e.g., epilogue, closing_letter, acknowledgments, about_the_author, appendix, resources, notes, bibliography, references, glossary, index, generic). Per I-6, never null; \"generic\" is the fallback when no pattern matches."
+        }
+      },
+
+      "oneOf": [
+        { "required": ["text"], "not": { "required": ["spans"] } },
+        { "required": ["spans"], "not": { "required": ["text"] } },
+        {
+          "allOf": [
+            { "not": { "required": ["text"] } },
+            { "not": { "required": ["spans"] } }
+          ],
+          "description": "Structural blocks (page_break, horizontal_rule, scene_break, image placeholders) may omit both."
+        }
+      ],
+
+      "allOf": [
+        {
+          "description": "I-4: chapter_heading role MUST have a non-empty chapter_title.",
+          "if":   { "properties": { "role": { "const": "chapter_heading" } } },
+          "then": { "required": ["chapter_title"] }
+        },
+        {
+          "description": "I-5: part_divider role MUST carry force_page_break: true.",
+          "if":   { "properties": { "role": { "const": "part_divider" } } },
+          "then": {
+            "required": ["force_page_break"],
+            "properties": { "force_page_break": { "const": true } }
+          }
+        },
+        {
+          "description": "I-6: front_matter and back_matter roles MUST have a subtype.",
+          "if":   { "properties": { "role": { "enum": ["front_matter", "back_matter"] } } },
+          "then": { "required": ["subtype"] }
+        },
+        {
+          "description": "heading CIR type MUST carry heading_level.",
+          "if":   { "properties": { "type": { "const": "heading" } } },
+          "then": { "required": ["heading_level"] }
+        }
+      ]
+    },
+
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text":  { "type": "string" },
+        "marks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "italic", "bold", "small_caps", "code",
+              "underline", "strikethrough", "superscript", "subscript"
+            ]
+          },
+          "description": "Frozen CIR spans-marks vocabulary (Doc 22 §CIR Block Structure). underline and strikethrough are new in v2.0 and W2 decides whether to render or strip each."
+        }
+      }
+    },
+
+    "applied_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "version"],
+      "properties": {
+        "rule":      { "type": "string", "pattern": "^[NCVRH]-\\d{3}$", "description": "Doc 22 rule id (e.g., N-004, H-001)." },
+        "version":   { "type": "string", "pattern": "^v\\d+$", "description": "Rule version that fired (v1, v2, ...)." },
+        "count":     { "type": "integer", "minimum": 1, "description": "Number of times the transformation was applied. Optional; present for count-based rules like N-004." },
+        "decision":  { "type": "string", "description": "For L5 defaults, the decision made (e.g., \"used author title page; suppressed system-generated\"). Required for L5 per I-9." },
+        "block_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^b_[0-9]{6,}$" },
+          "description": "Optional: the block ids this rule fired on, when per-block provenance is useful."
+        }
+      }
+    },
+
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "severity", "detail"],
+      "properties": {
+        "rule":     { "type": "string", "pattern": "^[VH]-\\d{3}$", "description": "Doc 22 rule id that produced the warning. Layer 3 validators (V-###) are the primary source; Layer 5 rules (H-###) may also emit divergence warnings — e.g., H-001 flags intake-vs-manuscript title mismatches." },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "detail":   { "type": "string", "description": "Human-readable warning summary. Include the specific observation (e.g., \"possible missing space: 'theweather'\")." },
+        "block_id": { "type": "string", "pattern": "^b_[0-9]{6,}$", "description": "Optional: the block this warning is anchored to." },
+        "blocks":   {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^b_[0-9]{6,}$" },
+          "description": "Optional: multiple block ids for warnings that span more than one block (e.g., V-001 chapter gap)."
+        },
+        "offset":   { "type": "integer", "minimum": 0, "description": "Optional: character offset within the block's text/spans for precise anchoring." }
+      }
+    },
+
+    "rule_fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "phase", "fault_class", "message"],
+      "properties": {
+        "rule":        { "type": "string", "pattern": "^[NCVRH]-\\d{3}$" },
+        "phase":       { "type": "string", "enum": ["ingest", "strip", "classify", "normalize", "validate", "emit"] },
+        "fault_class": { "type": "string", "description": "Exception class name (e.g., \"ValueError\", \"AttributeError\")." },
+        "message":     { "type": "string", "description": "Sanitized fault message. MUST NOT include raw manuscript content." },
+        "block_id":    { "type": "string", "pattern": "^b_[0-9]{6,}$", "description": "The block the rule was operating on when it faulted, when applicable." }
+      }
+    },
+
+    "parent_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "artifact_type"],
+      "properties": {
+        "artifact_id":   { "type": "string" },
+        "artifact_type": { "type": "string" },
+        "artifact_url":  { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

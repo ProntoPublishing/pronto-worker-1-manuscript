@@ -28,10 +28,12 @@ app = Flask(__name__)
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
+    from pronto_worker_1 import WORKER_VERSION, RULES_VERSION
     return jsonify({
         'status': 'healthy',
         'service': 'worker_1_manuscript_processor',
-        'version': '4.1.0'
+        'version': WORKER_VERSION,
+        'rules_version': RULES_VERSION,
     })
 
 @app.route('/process', methods=['POST'])
