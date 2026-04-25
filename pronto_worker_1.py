@@ -99,6 +99,31 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _first_lookup_value(field: Any) -> Optional[str]:
+    """Read the first non-empty string from an Airtable lookup field.
+
+    multipleLookupValues fields return a list[str] in Airtable's API,
+    even when the underlying source is a single-line text and the link
+    resolves to one record. Defensive: also handles a bare string in
+    case the field type changes upstream. Returns None for empty.
+    """
+    if field is None:
+        return None
+    if isinstance(field, str):
+        return field.strip() or None
+    if isinstance(field, list):
+        for item in field:
+            if item is None:
+                continue
+            s = str(item).strip()
+            if s:
+                return s
+        return None
+    # Anything else (number, dict, etc.) — coerce defensively.
+    s = str(field).strip()
+    return s or None
+
+
 # ---------------------------------------------------------------------------
 # Processor
 # ---------------------------------------------------------------------------
@@ -382,46 +407,50 @@ class ManuscriptProcessor:
         """Derive (intake_submission_id, service_sku) for the I-8 storage
         key.
 
-        TODO (iter 8 / corpus conversation): finalize against the real
-        Airtable schema. Current behavior:
-          - intake_submission_id: project's 'Intake Submission ID' field
-            if present, else service_id as a stable-but-non-canonical
-            fallback.
-          - service_sku: service record's 'SKU' / 'Service SKU' field if
-            present, else derived from Service Type via a small map,
-            else 'UNKNOWN'.
-        Both values appear in the storage key AND on the artifact;
-        per I-8 they stay self-consistent within a single run even when
-        the sources are placeholders.
+        Reads the canonical Airtable lookup fields directly off the
+        Service record (one read, no table chasing):
+
+          - `Project Intake Submission ID` — multipleLookupValues lookup
+            of `Intake Submission ID` (singleLineText) on the linked
+            Project record. Project's field is the canonical source.
+          - `Service SKU` — multipleLookupValues lookup of `SKU`
+            (singleLineText) on the linked Service Type record from the
+            Service Catalog. Service Type's field is the canonical source.
+
+        No fallbacks. If either lookup is empty, the Service record has
+        a data-integrity problem (missing Project link, missing Service
+        Type, or the canonical source field is blank) and the run must
+        fail loudly so the gap surfaces in Airtable. Synthesizing a key
+        from a service_id-shaped fallback would mask the upstream
+        problem and produce a key that does not match the canonical
+        identifier, breaking I-8.
         """
         fields = service.get("fields", {})
-        intake_id: Optional[str] = None
-        if project_id and self.projects_table is not None:
-            try:
-                project = self.projects_table.get(project_id)
-                pf = project.get("fields", {})
-                intake_id = (
-                    pf.get("Intake Submission ID")
-                    or pf.get("Submission ID")
-                    or pf.get("Tally Submission ID")
-                )
-            except Exception as e:
-                logger.warning(f"Project lookup for intake id failed: {e}")
+
+        intake_id = _first_lookup_value(fields.get("Project Intake Submission ID"))
         if not intake_id:
-            intake_id = service.get("id") or ""
+            raise ValueError(
+                f"Service {service.get('id')} has no Project Intake "
+                f"Submission ID. The lookup walks Service → Project → "
+                f"Intake Submission ID; check that the Service is linked "
+                f"to a Project and that the Project's Intake Submission "
+                f"ID field is populated."
+            )
 
-        sku = fields.get("Service SKU") or fields.get("SKU")
+        sku = _first_lookup_value(fields.get("Service SKU"))
         if not sku:
-            svc_type = (fields.get("Service Type") or "").strip().lower()
-            sku_map = {
-                "manuscript processing": "MSPROC",
-                "interior formatting":    "INTFMT",
-            }
-            sku = sku_map.get(svc_type, "UNKNOWN")
+            raise ValueError(
+                f"Service {service.get('id')} has no Service SKU. The "
+                f"lookup walks Service → Service Type → SKU (Service "
+                f"Catalog); check that the Service is linked to a "
+                f"Service Type and that the Service Type's SKU field is "
+                f"populated."
+            )
 
-        # Make both URL-safe: strip slashes and whitespace.
-        intake_id = str(intake_id).strip().replace("/", "_")
-        sku = str(sku).strip().replace("/", "_")
+        # URL-safe sanitation: storage keys must not contain slashes
+        # (would create unintended path segments) or whitespace.
+        intake_id = str(intake_id).strip().replace("/", "_").replace(" ", "_")
+        sku = str(sku).strip().replace("/", "_").replace(" ", "_")
         return intake_id, sku
 
     # -- Airtable mutations --------------------------------------------------

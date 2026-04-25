@@ -100,23 +100,32 @@ also settle:
   `any_layer_4_fault_fails=true`) per Doc 22 §Operational Policy.
   Current defaults are untested against real fault densities.
 
-### Gate 3 — Storage-key placeholders
+### Gate 3 — Storage-key placeholders ✅ CLOSED 2026-04-25
 
-`pronto_worker_1.py._derive_storage_ids()` carries TODO markers for
-two fields used in the I-8 versioned storage key:
+`pronto_worker_1.py._derive_storage_ids()` now reads the canonical
+Airtable lookup fields directly off the Service record:
 
-- **`intake_submission_id`** — best-guess reads `Intake Submission ID`
-  / `Submission ID` / `Tally Submission ID` on the Project record;
-  falls back to `service_id` if none is present.
-- **`service_sku`** — reads `Service SKU` / `SKU` on the Service
-  record; falls back to a two-entry map by Service Type name, then
-  `"UNKNOWN"`.
+- **`intake_submission_id`** ← `Project Intake Submission ID`
+  (multipleLookupValues lookup of `Intake Submission ID` on the linked
+  Project record; canonical source field is on Projects).
+- **`service_sku`** ← `Service SKU` (multipleLookupValues lookup of
+  `SKU` on the linked Service Type record from the Service Catalog;
+  canonical source field is on Service Catalog).
 
-Both fallbacks keep the key self-consistent with the artifact body
-within a single run (I-8 holds), but they're not canonical. Before a
-deploy, the real Airtable schema needs to be confirmed and the
-fallbacks either tightened or removed. This is a 30-minute follow-up
-once the corpus conversation identifies the field names.
+No fallbacks. If either lookup is empty the run raises a clear
+`ValueError` and flips the Service to Failed via the existing
+fault-safe path — the data-integrity problem surfaces in Airtable
+where it can be corrected, instead of being papered over with a
+synthesized key. This preserves I-8 strictly: every storage key
+matches the artifact body's identifiers, and every artifact's
+identifiers trace to the Airtable source of truth.
+
+A `_first_lookup_value()` helper in `pronto_worker_1.py` reads the
+multipleLookupValues format defensively (handles list[str], bare
+string, and empty-list cases). Six unit tests cover the contract:
+both lookups present, defensive string-mode, missing-intake raise,
+missing-sku raise, empty-list-treated-as-missing, and URL-safe
+sanitization of spaces/slashes in the resulting key segments.
 
 ## What's pending on the v1.1 consolidation punchlist (logged, no action)
 

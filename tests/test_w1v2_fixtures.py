@@ -918,5 +918,108 @@ class Test_V004_TrackedChangesResidueDetector(BaseFixtureTest):
         self.assertEqual(v004[0]["block_id"], "b_000002")
 
 
+class Test_DeriveStorageIds(BaseFixtureTest):
+    """Gate 3 closure: _derive_storage_ids reads canonical lookup fields
+    directly off the Service record. Tests the helper without touching
+    Airtable by constructing a fake Service dict and a stub processor.
+    """
+
+    @staticmethod
+    def _stub_processor():
+        """Build just enough of ManuscriptProcessor to call
+        _derive_storage_ids without standing up Airtable / R2 clients.
+        """
+        from pronto_worker_1 import ManuscriptProcessor
+        proc = ManuscriptProcessor.__new__(ManuscriptProcessor)
+        proc.projects_table = None  # not consulted in v1.0.2 path
+        proc.book_metadata_table = None
+        return proc
+
+    def test_canonical_lookups_resolve(self):
+        """Both Project Intake Submission ID and Service SKU lookups
+        present → returns (intake_id, sku) verbatim."""
+        proc = self._stub_processor()
+        service = {
+            "id": "recSVC123",
+            "fields": {
+                "Project Intake Submission ID": ["TALLY-8F3Q"],
+                "Service SKU": ["INTFMT"],
+            },
+        }
+        intake_id, sku = proc._derive_storage_ids(service, project_id="recPROJ")
+        self.assertEqual(intake_id, "TALLY-8F3Q")
+        self.assertEqual(sku, "INTFMT")
+
+    def test_string_lookup_also_works(self):
+        """Defensive: if the field type is ever changed upstream from
+        multipleLookupValues to a bare string, the helper handles both.
+        """
+        proc = self._stub_processor()
+        service = {
+            "id": "recSVC123",
+            "fields": {
+                "Project Intake Submission ID": "TALLY-8F3Q",
+                "Service SKU": "INTFMT",
+            },
+        }
+        intake_id, sku = proc._derive_storage_ids(service, project_id=None)
+        self.assertEqual(intake_id, "TALLY-8F3Q")
+        self.assertEqual(sku, "INTFMT")
+
+    def test_missing_intake_raises_with_actionable_message(self):
+        proc = self._stub_processor()
+        service = {
+            "id": "recSVC123",
+            "fields": {"Service SKU": ["INTFMT"]},  # intake lookup absent
+        }
+        with self.assertRaises(ValueError) as cm:
+            proc._derive_storage_ids(service, project_id="recPROJ")
+        msg = str(cm.exception)
+        self.assertIn("Project Intake Submission ID", msg)
+        self.assertIn("recSVC123", msg)
+
+    def test_missing_sku_raises_with_actionable_message(self):
+        proc = self._stub_processor()
+        service = {
+            "id": "recSVC123",
+            "fields": {"Project Intake Submission ID": ["TALLY-8F3Q"]},
+        }
+        with self.assertRaises(ValueError) as cm:
+            proc._derive_storage_ids(service, project_id="recPROJ")
+        msg = str(cm.exception)
+        self.assertIn("Service SKU", msg)
+        self.assertIn("Service Catalog", msg)
+
+    def test_empty_lookup_list_treated_as_missing(self):
+        """Airtable returns empty list when the link resolves to a
+        record but the source field is blank — must raise, not produce
+        an empty string in the storage key."""
+        proc = self._stub_processor()
+        service = {
+            "id": "recSVC123",
+            "fields": {
+                "Project Intake Submission ID": [],
+                "Service SKU": ["INTFMT"],
+            },
+        }
+        with self.assertRaises(ValueError):
+            proc._derive_storage_ids(service, project_id="recPROJ")
+
+    def test_url_safe_sanitization(self):
+        """Spaces and slashes in the canonical values get replaced so
+        the resulting storage key has no path-segment surprises."""
+        proc = self._stub_processor()
+        service = {
+            "id": "recSVC123",
+            "fields": {
+                "Project Intake Submission ID": ["TALLY 8F3Q/X"],
+                "Service SKU": ["INT FMT"],
+            },
+        }
+        intake_id, sku = proc._derive_storage_ids(service, project_id=None)
+        self.assertEqual(intake_id, "TALLY_8F3Q_X")
+        self.assertEqual(sku, "INT_FMT")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
