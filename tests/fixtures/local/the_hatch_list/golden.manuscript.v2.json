@@ -1,0 +1,4128 @@
+{
+  "schema_version": "2.0",
+  "worker_version": "5.0.0-a1",
+  "rules_version": "1.0.3",
+  "artifact_type": "manuscript",
+  "artifact_id": "art_local0000000000",
+  "service_id": "local",
+  "source": {
+    "original_filename": "input.docx",
+    "original_format": "docx",
+    "original_file_size_bytes": 29998,
+    "source_hash_sha256": "dfcd5765653efadc7ac7a5041c066aac8220de2fd9ece15602983d1fe0dcf762",
+    "ingested_at": "1970-01-01T00:00:00+00:00"
+  },
+  "processing": {
+    "worker_name": "worker_1_manuscript_processor",
+    "run_id": "00000000-0000-0000-0000-000000000000",
+    "project_id": "local",
+    "processed_at": "1970-01-01T00:00:00+00:00"
+  },
+  "content": {
+    "blocks": [
+      {
+        "id": "b_000001",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "empty_line"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000009",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "THE HATCH LIST",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered",
+          "large_font"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000010",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "❦",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "centered",
+          "large_font"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000011",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Being a True (Mostly) Account of the Founding, Folly, and",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000012",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Felonies of Hatch & Sons, Publishers, of the District of",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000013",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Columbia, in the Year Following the Late Unpleasantness in Europe.",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000014",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "empty_line"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000020",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "WASHINGTON, D.C.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000021",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "MCMXX",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000022",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER ONE",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000023",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A Quartermaster’s Clerk Inherits a Sum Sufficient to Ruin Him",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000024",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "In the spring of 1919, Cornelius Hatch returned from France with three things he had not arrived with: a slight limp of dubious origin (sustained, if his recollection were strictly honest, by stepping on a particularly indignant goose at a billet outside Reims), a mild but persistent cough that he liked to hint had been gas-related but was in fact the result of having grown rather too fond of French cigarettes, and a leather-bound notebook stuffed with the poetry of his fellow doughboys.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000025",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was the notebook that ruined him.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000026",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The poems, on the whole, were terrible. Cornelius had collected them in his official capacity as clerk to Quartermaster Major Ridgely, whose own hand was so hopeless that any soldier wishing to send a letter home with a chance of being read had been encouraged to bring it to “Hatch the Scribe.” In the course of these labors he had copied a great many letters, and also, when boredom set in (which was, owing to the famous Ridgely Method of running a quartermaster’s office, rather often), a great deal of verse. Verse about home. Verse about girls. Verse about other men’s girls. There was an alarming amount of verse about mules.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000027",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "When the Armistice came, Cornelius tucked the notebook into his pack and resolved, with the firm and quiet conviction of a man who had not the faintest idea what he was talking about, that he would publish the poems when he got home. He did not, in the end, publish the poems. But the resolution to do so set in motion the events by which a young man with no qualifications, no business sense, and an inheritance just large enough to be dangerous became the proprietor of the most disreputable, most beloved, and least solvent publishing house in the District of Columbia between the wars.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000028",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "His Aunt Hattie, of Annandale, departed this earth in May, two days after a particularly disagreeable game of bridge with Mrs. Pelhamson next door, and left to her favorite nephew the sum of four thousand two hundred and seventeen dollars, a brass spittoon she had won in a raffle at the 1893 World’s Columbian Exposition, and a tabby cat named Mr. Whittaker who refused, on principle, to be rehomed.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000029",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was a sum both not nearly enough and just barely sufficient. It was not nearly enough to do anything sensible with. It was just barely sufficient to do something ridiculous. Cornelius did the ridiculous thing.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000030",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "On a humid afternoon in July, he signed a one-year lease on the second floor of a narrow brick building at 1413 F Street Northwest, situated directly above an establishment trading under the name of WONG’S QUALITY LAUNDRY AND CHINESE GOODS. Mr. Wong, a gentleman of considerable acumen and almost no detectable patience, had insisted that the lease include a clause prohibiting the new tenant from “bumping the floor with rude noises during business hours,” and Cornelius had agreed without quite knowing what a rude noise was, but feeling, in the abstract, that he was unlikely to make one.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000031",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He bought a desk. He bought a typewriter. He bought, on the recommendation of a man at the stationer’s who turned out to be both drunk and lying, an enormous quantity of cardstock in a shade of egg-yolk yellow that proved, in every subsequent application, to be precisely the wrong color. He had a sign painted: HATCH & SONS, PUBLISHERS OF QUALITY BOOKS. There were no sons. There was only Cornelius. The plural, as he later explained to Reggie, “lent dignity.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000032",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It also lent,” Reggie observed, “the strong suggestion that the firm has been around for at least one generation longer than it has, which is a useful suggestion for anyone of whom the questions might otherwise be asked.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000033",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I had not thought of that.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000034",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“No,” said Reggie. “You wouldn’t have.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000035",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "But this was later. In July of 1919, Cornelius did not yet know Reggie. He sat behind his new desk in his new office above Mr. Wong, with Mr. Whittaker the inherited tabby asleep on the typewriter, and he waited for an author.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000036",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The first one walked in on the seventh of August. Cornelius rose to greet him, smoothed the front of his secondhand suit, and said the carefully prepared words he had been practicing: “Good afternoon. I am Mr. Hatch. How may Hatch and Sons be of service?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000037",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The man took off his hat and looked around the room. “Are you really publishers?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000038",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“We really are.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000039",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Of books?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000040",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Of books.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000041",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“All right then,” said the man, who was thick about the middle, white about the moustache, and red about everything else. “I am United States Senator Buford Plimpton, of the great state of Maine, and I would like you to publish my memoirs.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000042",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius said, “Sir, it would be our honor.” It would, in fact, be very much the opposite of an honor. But he did not, at that early stage, know this either.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000043",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER TWO",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000044",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "In Which the Gold Standard Is Defended at Some Length",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000045",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Senator Plimpton’s memoirs ran to eight hundred and forty-seven pages of foolscap, which he produced from a portfolio with three leather straps and deposited on Cornelius’s desk with the satisfied thud of a man delivering not a manuscript but a cornerstone.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000046",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It’s all there,” said the Senator, with the proprietorial wave of a man indicating real estate. “Forty-three years of distinguished service. There is a chapter on my position regarding the gold standard.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000047",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I look forward to it.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000048",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“There are three chapters on my position regarding the gold standard.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000049",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Splendid.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000050",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Chapter Forty-Two is entitled, ‘Why a Man of Conviction Cannot Be Reasoned With on the Subject of the Gold Standard.’ I wrote it in one sitting. I broke a pen.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000051",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was during the first week of editorial labor that Cornelius came to a useful realization, which he later considered foundational to the publishing trade: very few men sit down to write a memoir for the purpose of telling the truth about themselves, and almost no senator has ever done so. The memoir of a living politician is a document with one foot in autobiography and one foot somewhere considerably to the south, and it is the editor’s job to gently but firmly help that southerly foot to rejoin the other in the realm of the at least semi-plausible.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000052",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius set himself to the task. He cut three of the chapters on the gold standard. He cut the chapter on the Senator’s hunting trip with President Cleveland, which the Senator could not have taken because the dates given fell during a period when President Cleveland was, by all available evidence, in Buzzards Bay, Massachusetts, with gout. He cut the chapter on the Senator’s friendship with Mark Twain, which was less a record of friendship than a record of having once been seated, on a train, in the row behind Mark Twain, who was reportedly snoring. He cut the chapter on the Senator’s correspondence with Otto von Bismarck, the existence of which appeared to be confined to one letter, which was, when produced for inspection, an advertisement from a chemical fertilizer company in Bremerhaven.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000053",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The Senator, when these excisions were proposed, became scarlet and several decibels louder. “But, sir,” said Cornelius, with the steady reasonable voice he had developed in the trenches, “it is for the dignity of the volume.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000054",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The Senator subsided. The dignity of the volume was a phrase the Senator could not argue with. It was, in the end, the only thing the Senator could be argued out of anything by. Cornelius would use the phrase, in various permutations, on every author he ever published. Reggie, when he learned of it, declared it “the most useful four words in the English language, after I love you and which is the bathroom.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000055",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The book was published in October as RECOLLECTIONS OF A STATESMAN. It sold three hundred and forty-six copies, of which eighty-one were purchased by the Senator himself, ninety-two by his wife and various cousins, and the rest by genuine strangers who, presumably, were either curious or in some way owed money. The Senator was overjoyed.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000056",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“A man came to my house the other day,” he declared, on the day he came to collect his author copies, “and he said to me — he said, ‘Senator, I have been reading your memoir.’ And do you know what I said to him?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000057",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“What did you say, sir?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000058",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I said, ‘Sir, you are the third such man this week.’”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000059",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It would, Cornelius reflected later, have been considerably more impressive had the man asking not been the Senator’s nephew, who was angling for an internship.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000060",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER THREE",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000061",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mr. Pemberton-Crisp Walks In, with a Pekingese",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000062",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Reginald Pemberton-Crisp first walked into the offices of Hatch & Sons on a Tuesday in late August, wearing a linen suit that had been white the previous year, a monocle that he did not need, and an expression of high theatrical purpose. He was tall, thin, somewhere in his middle fifties, and possessed of an English accent so plummy that one suspected him of having cured it in cognac. He carried under one arm a sheaf of papers, and under the other a Pekingese.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000063",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Good afternoon,” said the man, depositing the Pekingese on Cornelius’s blotter, where it stood with the flummoxed dignity of a small monarch in unfamiliar furniture. “You are Mr. Hatch. I am Reginald Pemberton-Crisp. I have come to make your fortune.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000064",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“How do you do.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000065",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I have here,” said the man, “the most exciting mystery novel ever penned in the English language. It is destined to be read by millions. It will be translated into seventeen tongues. It will be read aloud in Parisian salons by women in chemises. The film rights — and I say this without exaggeration — will be fought over by Mr. Goldwyn and Mr. Mayer in a Hollywood swimming pool, with neckties.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000066",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Goodness.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000067",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It is called THE CRIMSON CRAVAT. It is the first installment of what I anticipate will be a series of forty-two. The detective is named Lord Lucian Lavabre. He is an English aristocrat who solves crimes in Paris.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000068",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Where do you live, sir, may I ask?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000069",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“In Adams Morgan.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000070",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“And have you yourself ever been to Paris?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000071",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch,” said Reggie, leaning forward and laying both hands flat upon the blotter on either side of the Pekingese, “I have never let a small thing like ignorance stand between me and a setting.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000072",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "This — and Cornelius sometimes thought this in later years — was the moment in which his life became something other than what it would otherwise have been. There was a quality in the man that he had not encountered before. It had to do with the perfect commitment of his absurdities to themselves. Reggie was not a man telling lies; he was a man inhabiting a world that contained, among other furnishings, his lies, and he did so with such conviction that it became difficult to insist upon the rest of the world’s absence.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000073",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius read the manuscript that night, by gaslight, with Mr. Whittaker on his lap. It was awful. The hero swooned twice in three pages. The villain was identified on page eleven. The mystery was solved when Lord Lucian Lavabre, examining a glass of Burgundy at the Café de la Paix, recognized in the wine “the unmistakable bouquet of murder.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000074",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "But it was funny. That was the thing. Whether or not Reggie had intended it to be funny — and Cornelius rather thought he had not — the book was funny. Lord Lucian Lavabre, who paused in the middle of a chase scene to remark upon the quality of his shoelaces, was extremely funny. The paragraph in which the murderer was finally apprehended ran to a single sentence of two hundred and seven words, all spoken by Lord Lucian alone in a room, who concluded by removing his gloves and arresting himself before realizing his error.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000075",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius came in the next morning resolved to publish it. Reggie nodded with the grave satisfaction of a man receiving long-anticipated and fully merited news.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000076",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch,” said Reggie, “I am going to give you a piece of advice. The book must be published under a pseudonym.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000077",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Why, sir?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000078",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Because, Mr. Hatch, as the case proceeds, I shall be writing the next forty-one of them. Some of them will be very bad. We must prepare a sufficient number of pseudonyms to absorb the bad ones.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000079",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“And the good ones, sir?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000080",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“The good ones,” said Reggie, with a small flick of his moustache, “we shall publish under my name.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000081",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was published under the name HUBERT FEATHERBOTTOM. There would, in time, be thirteen others. The bad ones were absorbed by Mr. ALOYSIUS Q. THORNHILL, by ELSPETH GRANGE-DEARBORN (Reggie’s favorite), by FATHER DESMOND McALLISTER, by MAJOR HARRY COLLINGSWOOD, by LADY MELISANDE TWICKENHAM-BOOTH, and by a series of others, some of whom Reggie maintained were real persons of his acquaintance from whom he had purchased the use of the name for the sum of one shilling and a postcard, although Cornelius suspected the shillings and postcards had been entirely imaginary, and the persons likewise.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000082",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "THE CRIMSON CRAVAT sold eight hundred copies in the first month, fourteen hundred by Christmas, and an entirely unexpected three thousand more in March, after a very confused review in the Baltimore Sun called the book “an American masterpiece of unintentional satire,” the word UNINTENTIONAL of which had been set in italics by a sympathetic typesetter who had himself read the book and laughed.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000083",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Reggie took Cornelius to dinner at the Willard. He drank three glasses of an extremely indifferent wine, and proposed a toast: “To the most wonderful young publisher of my acquaintance, who shall live to be one hundred and seven and to publish me in fifty-one volumes and shall die at his desk surrounded by manuscripts!”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000084",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Steady on.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000085",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Surrounded by manuscripts,” Reggie repeated firmly, “and with a pen in his hand, having just struck out a paragraph.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000086",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was the founding of a friendship which would last as long as both of them were alive, and would include three duels (none of them resulting in fatalities or, indeed, in any party’s actually firing a shot), one moderately serious police matter, a hundred and ten dinners at Harvey’s Oyster House, and the events of the spring of 1920, which form the substance of the present narrative.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000087",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER FOUR",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000088",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A Gallery of Personages, Most of Whom Should Not Have Been Encouraged",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000089",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Within a year, the offices of Hatch & Sons (above Wong’s Quality Laundry, walked up by a flight of stairs that creaked in the pattern of “Onward Christian Soldiers” if you ascended at exactly the right pace) became known among the literary inhabitants of the District as “the place where the queer ones go.” It was not, on the whole, an undeserved reputation.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000090",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There came MADAME ZARA, who arrived in November in a black veil and a hat the size of a wagon wheel, accompanied by an Egyptian cat (Pharaoh, by name) and a manuscript titled THE WHISPERS OF THE PYRAMIDS: BEING THE TRUE AND CHANNELED MEMOIR OF KING TUTANKHAMUN. It was an unfortunate manuscript — partly because King Tutankhamun’s tomb had not yet been discovered (this would not occur until 1922), and partly because the King’s voice, as channeled, sounded suspiciously like a Theosophist tract from 1894 with the proper nouns crossed out. Madame Zara was, however, so charming and so utterly committed to her conviction that she possessed Pharaoh’s confidence, that Cornelius lacked the heart to turn her away. She would go on to publish channeled memoirs of Cleopatra, Genghis Khan, Joan of Arc, and Andrew Jackson, the last of whom turned out to be the bestselling of the lot, owing to Madame Zara’s having allowed Andrew Jackson, in death, to develop strong opinions about the Federal Reserve Act.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000091",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There came MRS. EDITH TWEEDY, of Foggy Bottom, with a series of children’s stories about a Pomeranian named Mr. Snuffles. There were eventually twelve volumes. He went to the seaside. He went to the bank. He went to Paris (Cornelius privately suspected this volume of having been ghostwritten, free of charge, by Reggie, since the descriptions of Paris were of a piece with the Paris of THE CRIMSON CRAVAT, which is to say the Paris of someone who had once seen a postcard of Paris from a considerable distance and through fog). He went, in the eleventh volume, to be buried. Cornelius had attempted to dissuade Mrs. Tweedy from this, on grounds of audience response. Mrs. Tweedy, who had loved her own dog Mr. Snuffles (deceased, December 1919, of a stroke he sustained while barking at a coalman), had been unmovable. Volume Twelve was an interlude in which Mr. Snuffles appeared as a ghost.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000092",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There came MR. CLARENCE POTTLE, a retired customs inspector from Baltimore, who had spent fifteen years composing a novel of two thousand and forty pages, every sentence of which was a palindrome. Cornelius had asked Mr. Pottle whether the novel had a plot. Mr. Pottle had stared at him as if the question were a personal affront, and replied: “It has, sir, more plot than your literary novel of the present day, which has none at all.” The book was not, ultimately, published. Mr. Pottle would not consent to the removal of any palindrome, and there was, embedded among the otherwise unintelligible sentences, one in chapter forty-one which suggested very strongly that the author was, or had recently been, in a confessional mood about the disposition of certain crates of Belgian linen at the port of Baltimore in 1908. Reggie, having read the chapter, said: “My dear fellow, that is not a novel. That is a deposition that a man read backwards and decided to call literature.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000093",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There came BRIGADIER-GENERAL AMBROSE FEATHERSTONEHAUGH (pronounced FANSHAW, for reasons no man living could now discover), with a war memoir of a thousand pages, of which thirty-four were a description of a single afternoon at the Battle of Belleau Wood, in which the General had personally decided the engagement by a combination of rapid horseback maneuvers and forceful expressions to subordinates. Cornelius, who had served in France in the same general direction, knew very well that the General had spent the afternoon in question two miles behind the line in a farmhouse, eating cassoulet. He did not say so. The dignity of the volume was preserved. The General sent Cornelius a Christmas card every year for nine years thereafter, addressed to “MAJOR HATCH” — Cornelius had been, at his highest rank, a corporal — and Cornelius did not correct him.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000094",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There came MISS VESPER GLADE, an anarchist poetess from Adams Morgan, whose collection RED ROSES AND OTHER MUNITIONS managed in eighty-two pages to threaten by name every Justice of the Supreme Court, two members of the Federal Reserve Board, three industrialists, a pharmacist in Hagerstown who had once given Miss Glade a wrong prescription, and an unnamed but unmistakable description of Miss Glade’s mother. Cornelius, on Reggie’s advice, declined to publish the volume but offered to introduce Miss Glade to a competing publisher across town, on the polite understanding that the competing publisher had previously stolen one of Reggie’s pseudonyms, and that the introduction constituted, in Reggie’s accounting, “an exquisite act of revenge, properly conceived.” The competing publisher published Miss Glade’s volume in May. He was visited by federal agents in July. He did not steal another of Reggie’s pseudonyms.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000095",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There came also MR. ALPHONSE BOOKER, who came not as an author but as a typesetter. He had been employed for thirty years at the Government Printing Office, where he had been let go in some haste for the offense of having set, on his own initiative and over a single weekend, the entire Congressional Record of March eighteenth in iambic pentameter. Mr. Booker, he explained, did not care much for the regular meter of legislation, and had felt the document would benefit from the regular meter of poetry. Cornelius hired him at once.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000096",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "And there came, finally, on the morning of the second of March, 1920, MISS HENRIETTA VALE, of the Washington Herald, who would change everything.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000097",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER FIVE",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000098",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A Journalist Pays a Call, with Consequences",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000099",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Miss Vale entered the offices of Hatch & Sons at twenty minutes past ten on the morning of the second of March, 1920, ascending the staircase at precisely the wrong pace for “Onward Christian Soldiers” and producing, in consequence, the rhythm of a man falling down them.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000100",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She was twenty-six years old, a journalist in the news department of the Herald, and she had been sent by her editor, on a slow day, to write a profile of the smallest publishing house in the city. She arrived in a coat the color of seawater, a hat the color of nothing in particular, and a notebook open to a page on which she had already written, in rapid pencil: HATCH & SONS — “QUALITY” — investigate accuracy of plural — investigate accuracy of “quality.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000101",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000102",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I am he.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000103",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Henrietta Vale, of the Herald. May I sit down?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000104",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Of course. May I — coffee? Tea? Mr. Whittaker?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000105",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She looked at him.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000106",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Whittaker is the cat,” he explained.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000107",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I will have a cat,” she said.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000108",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“That is, unfortunately, not the form of the question.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000109",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Then I will have whichever of the alternatives is least likely to set your office on fire.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000110",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Tea,” he said.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000111",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She sat. He made tea on a small electric hob in the corner, which on the previous Tuesday had set the office briefly on fire. She watched him with the steady professional attention of a person who had been told, since beginning at the Herald in 1916, that men were entirely transparent if you watched them long enough, and who had found this to be true in nearly every particular.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000112",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She was not pretty in the manner of a magazine illustration. She was pretty in the manner of a person whose face has been allowed to become its own face, and who looks at you out of it without apology. Cornelius poured the tea. He had not been in the company of a young woman who was not his Aunt Hattie or one of his Aunt Hattie’s cribbage opponents in eighteen months. He had thought himself recovered from the war. He discovered, in the moment of the pouring, that he was not.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000113",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch, you appear to be shaking.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000114",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I am sorry. The hob.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000115",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Shall I pour my own?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000116",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Yes.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000117",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She poured her own. She was, he noticed, left-handed. He sat down opposite her.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000118",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Tell me,” she said, “everything about Hatch & Sons.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000119",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He did. He told her about Aunt Hattie and the egg-yolk cardstock and Mr. Wong and the rude noises. He told her about Senator Plimpton, but only the parts he was permitted to tell. He told her about Madame Zara and about Mrs. Tweedy and about Mr. Pottle (omitting the Belgian linen). He told her, eventually, about Reggie, and as he did so he saw a new kind of attention come into Miss Vale’s face — the slower, sharper attention of a journalist who has, in the course of an interview about coffee, suddenly stumbled across a story.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000120",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Pemberton-Crisp,” she said, “is the man who writes detective novels in Adams Morgan.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000121",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“You know him?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000122",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I know of him. There was a small society item in the Herald three weeks ago. He had attended a dinner at the British Embassy in a mauve dinner-jacket and had referred to himself, in conversation with an undersecretary, as ‘the only living English novelist who matters.’ The undersecretary had replied that he was probably right, and that he, the undersecretary, had not heard of him in any case.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000123",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“That sounds like Reggie.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000124",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“He sounds remarkable.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000125",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“He is. He is also,” Cornelius found himself saying, with a degree of feeling he had not anticipated, “the best friend I have ever had.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000126",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She wrote this down. He wished, briefly, that she would not. Then he was glad that she had.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000127",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch,” she said, after a pause, “there is a poem in my desk drawer at the Herald, which I have never shown to anyone. It is called THE STENOGRAPHER REGRETS. I should very much like, one day, to have it published.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000128",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Is that a question, Miss Vale?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000129",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I do not know what it is yet. May I have more tea?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000130",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She had more tea. She stayed two hours. The article appeared in the Herald on the seventh of March under the title HATCH & SONS, OR THE SMALLEST PUBLISHING HOUSE IN THE CAPITAL: A LADY CALLS, AND IS NOT FRIGHTENED. It was witty, fond, and quite clearly written by a woman who had, in spite of every professional intention, liked the man she had interviewed. Reggie read it the next morning over breakfast, carried it into the office at half past ten, slapped it onto Cornelius’s desk, and said:",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000131",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“My dear fellow.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000132",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Yes.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000133",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“You are in love.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000134",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I am not.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000135",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“You are in love. I have not been in love myself in twenty-six years, but I recognize the symptoms in others, and they have not changed since I last had them. You are precisely in love. Look at your hands. You are turning the pencil end over end in a manner I have only ever seen otherwise in a man who has just seen a ghost.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000136",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I do not even know if she likes me.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000137",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Oh, my dear man,” said Reggie, with the smiling pity of a long-married widower for a young man at the threshold, “she likes you. She wrote a thousand words for the Herald, of which approximately seven hundred and forty are about you. She likes you. You will dine with her. You will dine with her by Saturday. We shall arrange it. Where is my hat. Where is my Pekingese. We are going across to the Herald.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000138",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“We are not going across to the Herald.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000139",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“We are going across to the Herald.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000140",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "They went across to the Herald. Reggie made the introduction. Reggie, with the tactical genius of a man who had arranged tea-tables in country houses for thirty years, made it in such a way that Miss Vale could not refuse without being ruder than she wished to be. Cornelius, dragged in behind him, was rather red. Miss Vale was rather amused. She agreed, on the Friday following, to dine with Cornelius at Harvey’s Oyster House. She specified that there would be no oysters. Cornelius agreed, with nearly the speed of light, that there would be no oysters. They ate beef.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000141",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was the beginning of the year of his life in which he was, against every premise of his upbringing, his temperament, and his recent past, happy. He was happy through April and into May. He was happy until the morning of the eighteenth of May, when the small parcel arrived at the offices of Hatch & Sons containing the manuscript that would do its level best to undo them.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000142",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER SIX",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000143",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A Parcel Arrives, Inconveniently",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000144",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The parcel was wrapped in brown paper and tied with twine, in the careful manner of a person who had never sent a parcel before, or who wished, perhaps, to seem to be such a person. The address read, in block capitals, MR. C. HATCH, HATCH & SONS PUBLISHERS, F STREET. There was no return.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000145",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Inside was a manuscript of two hundred and forty pages, entitled THE CHERRY BLOSSOM SET, and a note. The note read:",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000146",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mr. Hatch, — I have the honor to send you the enclosed novel for your consideration. I should like, if it pleases you, to publish it. It is a satire of a society I have observed for some years, and which, if you will forgive the immodesty of its author, I believe to deserve a certain quantity of satirizing. If you publish, I would request that the author be given as CASSANDRA TRUTHFUL, and that no other inquiries be made. — Yours very faithfully, CASSANDRA TRUTHFUL.",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000147",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius read the manuscript through the afternoon, missing tea. He read into the evening, missing dinner. Mr. Whittaker, sensing some slight in the omission, jumped onto the manuscript at page one hundred and ten and sat upon it. Cornelius lifted the cat, gave him a sausage, set him gently on the rug, and went on reading. He finished at twenty past eleven.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000148",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was, by some considerable margin, the best novel he had ever published. It was a savage, witty, perfectly observed satire of the Washington society of the year — of the Senatorial wives, the Cabinet wives, the embassies, the new-money industrialists who had come down from Pittsburgh after the war and bought houses in Kalorama which they did not know how to inhabit; of the Daughters of the American Revolution, of the Sons of the American Revolution, of the assistant secretaries of various pretentious things, of the wives of those assistant secretaries, who were worse, of the children of those wives, of the dogs of those children. It was a novel by a person who knew everyone in Washington and who liked almost none of them.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000149",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It would also, Cornelius perceived clearly even on first reading, get him sued. There was, for instance, the character of SENATOR PILGRIM of NEW HAMPSHIRE, who in chapter three was discovered to have written his memoirs in such bad faith that his publisher had cut three chapters on the gold standard. There was MRS. EDNA TWEED of FOGGY BOTTOM, who had written twelve volumes of children’s stories about a Pomeranian named MR. SCRUFFLES. There was MADAM ZARRA, who claimed communications from CHIEF SITTING BULL.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000150",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There was, in other words, a character in the novel for nearly every author Hatch & Sons had ever published, lightly disguised. There was also, however, a character for at least a hundred persons of the District of Columbia whom Hatch & Sons had never published. The Senator’s wife. The other Senator’s wife. The lady who had hosted a charity tea for the orphans of Belgium and used the receipts to redecorate her morning room. The Cabinet undersecretary who had been observed at the Mayflower in the company of his secretary and not his wife. The whole of the so-called Cherry Blossom Set, which the author named after the trees that had been gifted to the city by the Japanese in 1912, and which now, the author observed, had taken to imagining themselves the city’s first families.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000151",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "It was, in short, a roman à clef of considerable cruelty, of unimpeachable wit, and of a degree of accuracy that suggested either espionage or rather more domestic access than would be afforded to an outsider.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000152",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius locked the manuscript in his desk that night. He did not sleep. He went to Reggie’s apartment at seven the next morning and rang the bell until Reggie, in a dressing gown of Chinese silk that suggested either a misadventure with a curtain or a misadventure with a flag, came to the door.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000153",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Reggie read the manuscript at his kitchen table while Cornelius drank coffee. His face moved very little. Once, at page sixty-one, he laughed aloud. Once, at page one hundred and fourteen, he said, “Oh, dear God.” At twenty past nine he laid the manuscript down and said:",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000154",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Hatch. We must publish this book.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000155",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“We shall be sued.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000156",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“We shall be famous.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000157",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“How do we discover who Cassandra Truthful is?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000158",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It is a woman, my dear Hatch.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000159",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“How can you be certain?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000160",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Read again the description of the dress at page eighty-seven. No man has ever, in the history of fiction, described a dress that well. No man could. I myself, who have spent fifty years mounting an unsuccessful imitation of a man who knows about dresses, could not have written that paragraph. It is by a woman. I would stake my Pekingese on it.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000161",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“You have only the one Pekingese.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000162",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It is a very good Pekingese.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000163",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "So began the second labor of Hatch & Sons in the spring of 1920: the publication of THE CHERRY BLOSSOM SET, by Cassandra Truthful; and, in parallel, the private investigation, undertaken by Mr. Cornelius Hatch and Mr. Reginald Pemberton-Crisp, into the question of who, in the entire population of the District, this Cassandra Truthful might in fact prove to be.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000164",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER SEVEN",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000165",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A Caper, or Parts Thereof",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000166",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The book appeared in a first edition of two thousand copies, bound in dark green with gold lettering. It sold out in five days. A second edition was printed within the week. It also sold out, in three days. By the first of June a third was ordered, by the fifteenth a fourth, and by the twenty-second the Washington Post had run a column on its Sunday society page, under the byline of Mrs. Beatrix Mayhew (whose own column had been viciously satirized in the novel under the disguise of Mrs. Bunny Mayfair), inquiring with mounting fury into the identity of the author. The column referred to Cassandra Truthful as “this so-called wit.” It referred to the publisher as “Mr. Hatch, of an obscure firm above a Chinese laundry.” Cornelius framed it. Reggie framed it twice.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000167",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Letters arrived. Most were laudatory. Some threatened lawsuits. Senator Plimpton sent a letter on official Senate stationery declaring himself “deeply hurt and considering legal recourse” by the portrait of Senator Pilgrim, and within two paragraphs began suggesting amendments to a possible second printing in which Senator Pilgrim might be portrayed as having been right about the gold standard. Cornelius declined the amendments, sent a complimentary copy of the second edition, and never heard from him about the matter again.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000168",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There was, however, one letter which caused Cornelius and Reggie to look at one another over the desk in some considerable silence. It was unsigned. It read:",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000169",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "If you do not produce, by the eighteenth of June, the name and physical person of Cassandra Truthful, you will discover that the same publishing concern with which you have so foolishly amused yourselves can be made to discover, in turn, that there are limits to what may be amused at in this town. We are watching. We are not pleased.",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000170",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“My dear fellow,” said Reggie. “We are, I believe, what is technically called THREATENED.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000171",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It would seem so.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000172",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“This is what is generally referred to in the literature, dear Hatch, as a CAPER.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000173",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It is what I should have referred to, if pressed, as a SHAKEDOWN.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000174",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“In novels they are called capers. We shall consider it as a caper, the better to make our way through it.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000175",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "They closed up the office, walked across to the Willard, sat at the bar, and proceeded to think.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000176",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“The author has been in the offices of Hatch & Sons,” said Reggie. “The description of the offices in chapter four. The line about the smell on the staircase ‘like laundry steaming under a Bible meeting.’ That is the smell. I have smelt it. You smell it every morning. But you would not, I think, have written it down quite that way, my dear fellow.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000177",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Who comes to the offices, then? You. Me. Our authors. Mr. Booker. Mr. Wong. Miss Vale —”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000178",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Miss Vale.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000179",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A silence fell. Cornelius set down his glass.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000180",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“You are not suggesting Henry.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000181",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I am observing that Henry is one of the persons who has been in the offices, that Henry is a journalist of considerable powers of observation, and that we must, with respect, consider her.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000182",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He asked her. He asked her on the Thursday following, at dinner at Harvey’s, very gently and with apologies in advance, and she put down her fork and looked at him with the expression of a person who had just been asked, in the politest possible way, whether she was, in fact, a duck.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000183",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Cornelius. I am NOT Cassandra Truthful. If I had written that book — and there are several portions of it, my dear, which I believe I should have written rather better — I should not have published it under a pseudonym. I should have published it under my own name and dared Senator Plimpton to come to the Herald and tell my editor about it. I have been wanting to be sued by Senator Plimpton for at least three years, on grounds of his vote on the Eighteenth Amendment. I should have welcomed the suit.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000184",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Yes.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000185",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Now eat your beef, Cornelius, and do me the further courtesy of considering, while you do, who else has been in the offices.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000186",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He ate his beef. He considered it through the night. He came in to the offices the next morning, the seventeenth of June, and as he climbed the stairs in the rhythm of “Onward Christian Soldiers” played slightly off, he had a thought. The thought was that he had not, in his enumeration with Reggie, mentioned Mrs. Krzczinski.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000187",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mrs. Mabel Krzczinski had been the cleaning lady of Hatch & Sons since November of 1919. She came at six in the morning, four days a week, let herself in with a key Cornelius had given her on her first day, swept, dusted, emptied the wastebaskets, fed Mr. Whittaker, and left before the rest of them arrived. She was a woman in her late forties, born somewhere in the more difficult portions of the old Russian Empire, who had lost a husband to a coal accident in Pennsylvania and who had a son who had served, like Cornelius, in France. She had a small notebook in her apron pocket. He had assumed, when he had seen it, that the notebook was for grocery lists.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000188",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He went straight to his desk and opened the drawer in which he had, the previous evening, locked away the manuscript of a forthcoming volume by Madame Zara. The manuscript was not where he had put it. It had been moved by perhaps an inch, perhaps two. It had been read in his absence, returned, and replaced not quite in the position in which it had been placed.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000189",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He sat down. He looked at the typewriter on his desk. He thought of the small notebook in Mrs. Krzczinski’s apron pocket. He thought of the prose of THE CHERRY BLOSSOM SET. He thought of the specific manner in which the staircase smelled in chapter four, which was the manner in which the staircase smelled at six in the morning, when no one but Mrs. Krzczinski was there to smell it.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000190",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He pinned a note to the doorframe asking her to come a little earlier the next morning.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000191",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She came at half past five. He was already at his desk.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000192",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mrs. Krzczinski. You are Cassandra Truthful.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000193",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "She looked at him for a long, considering moment. She glanced at the door. She glanced at Mr. Whittaker. She returned her eyes to Cornelius.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000194",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Yes,” she said. “I am. Are you angry, Mr. Hatch?”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000195",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I am not angry. I am — astonished.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000196",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It is a very good book,” she said. There was the faintest tilt of a smile at the corner of her mouth, which Cornelius would, in years to come, remember as one of the most thrilling small acts of self-knowledge he had ever seen on a human face. “It is the best book you will publish, sir.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000197",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He showed her the threatening letter. She read it. Her expression did not change.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000198",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“This man,” she said, indicating the letter with one work-roughened finger, “is the husband of the woman in chapter eleven. I worked, before I came to this office, in the household of Mrs. Linfield. Mrs. Linfield is my chapter eleven. Mr. Linfield is the writer of this letter. He has very bad handwriting when he does not wish to be known, and very good handwriting when he does. I have washed his shirts.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000199",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mrs. Krzczinski.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000200",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Yes, sir.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000201",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I think we are going to be all right.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000202",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER EIGHT",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000203",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "A Letter, a Luncheon, and a Libel That Was Not",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000204",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mr. Phineas T. Linfield, of Massachusetts Avenue, was assistant attorney to the Office of the Solicitor General, collector of nineteenth-century English silver, and husband to the former Miss Cordelia Bramston of Annapolis, who appeared in chapter eleven of THE CHERRY BLOSSOM SET in the lightly veiled persona of Mrs. ARDELIA BRAMHALL. Mrs. Linfield had, in the course of that chapter, been observed by the author to have conducted a private correspondence with a person not her husband, and to have laughed about it over tea with a confidante who was, for purposes of the satire, a Baroness, and who in life was the wife of a German military attaché. Mr. Linfield, in short, was a man with a great deal to lose. He had recognized chapter eleven instantly, and in his rage had written the threatening letter in his off-handwriting, paying a uniformed postman in a coffee-shop to deliver it on the lazy reasoning that the postman would not look at it.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000205",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The postman, who was Mrs. Krzczinski’s son Pawel, had recognized the off-hand of Mr. Linfield from twelve dozen previous deliveries to that house, and had told his mother.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000206",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius went to see Reggie. Reggie listened. He rose from his chair, crossed his sitting-room twice, and said: “Hatch. We have him.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000207",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“How.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000208",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“He has signed a confession in the very act of writing the threat. The book is a satire of the entire Cherry Blossom Set, several hundred persons strong. Anyone might recognize himself in chapter four, or chapter seven, or chapter twenty-one. The man who threatens us over chapter eleven is the man whose wife is in chapter eleven. He has identified himself by the very fact of his fury.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000209",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“My dear Reggie.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000210",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“We must invite him to lunch.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000211",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "They invited him to lunch. Reggie, on the office stationery, wrote a note over Cornelius’s signature, which was sent that afternoon by Pawel Krzczinski, Postman, with the wry pleasure of a man performing the second appearance of a small role:",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000212",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mr. Linfield: — I should be most grateful for the favor of your company at luncheon at the Willard tomorrow at one o’clock, on a matter of mutual literary interest. — Yours faithfully, Cornelius Hatch.",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000213",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He came. He came in his best gray suit, in the company of his counsel, who was a Mr. Booth (the second-named of Linfield, Booth and Carrington), a man with a face like a discontented turnip. Cornelius and Reggie had arrived ten minutes early. Reggie was wearing a yellow waistcoat. Cornelius was wearing his only suit.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000214",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Gentlemen,” said Cornelius, when they had sat down, “I have invited you here on a matter of literary interest, and so it shall be.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000215",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“You have invited us here, Mr. Hatch,” said Mr. Booth, “to discuss the libelous publication, by your firm, of a novel entitled THE CHERRY BLOSSOM SET.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000216",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“I have invited you here, sir, because Mr. Linfield, in my view, is a reader of distinction and of taste, and I should like to read him a portion of the manuscript of the SECOND novel by Cassandra Truthful, and to ask him, as a gentleman of standing in this city, his frank opinion of it before publication.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000217",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "There was a pause.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000218",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“The second novel,” said Mr. Booth.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000219",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“The second novel.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000220",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“There is a second novel.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000221",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“There is. It is in some respects more direct than the first. We are, of course, considering certain editorial questions in respect of it. I had thought Mr. Linfield’s opinion would be most valuable.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000222",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "He produced a sheaf of typed pages, perhaps thirty in number. They had been typed the previous afternoon by Mrs. Krzczinski, on Cornelius’s Royal No. 10, with assistance from Reggie on the descriptive passages and from Mr. Booker on the typography. The novel was not in fact a real novel. The thirty pages were a kind of menacing concatenation, a confection, an extended threat in literary clothing. They began with the description of a morning room which was unmistakably Mr. Linfield’s morning room. They proceeded to a description of a piece of nineteenth-century English silver, item by item. They moved on to a description of a private correspondence between a certain Mrs. BRAMHALL and a certain BARONESS, in language considerably more direct than chapter eleven of the original book had used.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000223",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius opened his sheaf. He read the first paragraph aloud.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000224",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mr. Linfield went the color of rye flour.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000225",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch,” said Mr. Booth.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000226",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Yes.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000227",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Perhaps a different paragraph.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000228",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It is the opening paragraph of the second novel.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000229",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Perhaps,” said Mr. Booth, with the great unmistakable courtesy of a counsel who has just realized that his client has said something deeply unwise off-stage, “we might step away from the table for a moment.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000230",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Of course.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000231",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "They stepped away. Mr. Booth, taking Mr. Linfield by the elbow, walked him out into the lobby. They were gone for fourteen minutes. Cornelius and Reggie ordered a bottle of mineral water and were brought it. Cornelius had begun, by minute six, to feel quite ill. Reggie, by contrast, was the very picture of relaxed satisfaction, his monocle catching the light from the chandeliers and throwing little rainbows on the wall.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000232",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "They returned. Mr. Booth folded his hands on the white cloth and said:",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000233",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Mr. Hatch. My client has reflected, on consultation, that the publication of the first novel of Cassandra Truthful was a matter of robust literary expression, against which no reasonable gentleman would object. He has further come to the view that he was perhaps premature in the view he expressed in a letter — I understand a letter was sent — to your office some days ago. It was a letter, in my client’s reflection, that did not represent his considered position. He should be obliged if it were forgotten.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000234",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“It shall be forgotten, sir.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000235",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“My client further wishes to express, through me, his confidence that the second novel of Cassandra Truthful may consist of subjects entirely unconnected to those of the first, and that he himself shall look forward to its appearance. He undertakes personally that no further communication of any character shall originate from him.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000236",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“My dear Mr. Booth,” said Reggie, “you are a gentleman.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000237",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Sir,” said Mr. Booth, “you are a publisher.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000238",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "“Speak no further.”",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000239",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "They ate luncheon. The trout was indifferent. The conversation was confined to the weather, to the prospects of the Senators (the team), and to a question Mr. Linfield asked, with surprising humility, about whether THE CRIMSON CRAVAT might be picked up at a particular bookstore that he frequented. Reggie became almost incandescent with pleasure and recommended four further volumes by the same author, of which Mr. Linfield was, after that day, as far as anyone could ascertain, a faithful reader.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000240",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "The second novel of Cassandra Truthful was never published, because it had never existed. Mrs. Krzczinski, however, did write a real second novel, and it appeared in 1922 under her own name, with no pseudonym, on a different subject altogether. It was called THE STAIRCASE: A NOVEL OF AN AMERICAN HOUSEHOLD. It was about her own life. It is the best book Hatch & Sons ever published, and is in print at the present day.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000241",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "CHAPTER NINE",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000242",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "An Epilogue, Not Unduly Long",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000243",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius Hatch and Henrietta Vale were married in October of 1920, at a small ceremony at the Church of the Pilgrims in Foggy Bottom, attended by some forty persons, of whom the majority were authors who had been published by Hatch & Sons, and of whom several insisted on reading from their own works at the reception, for which they were not in all cases asked. Reggie was the best man. He gave a speech that was forty-six minutes in length, contained twelve digressions, three references to Lord Lucian Lavabre, and ended with a toast in French, of which neither Reggie nor anyone else present spoke, and which, when subsequently translated by the Belgian assistant minister, was discovered to be a recipe for a cassoulet. The recipe was excellent.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000244",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Hatch & Sons continued at 1413 F Street Northwest until 1937, when the building was sold and the firm moved to larger premises on Connecticut Avenue, by which time it was no longer above a Chinese laundry but above an Italian bakery, the smell of which the firm liked rather better. Mrs. Krzczinski continued to write, eventually publishing six novels. Reggie wrote forty-one further detective novels under fourteen pseudonyms, of which the last, in 1958, was the only one ever signed Reginald Pemberton-Crisp; he died in his sleep in 1959 with a manuscript on his chest, having just completed, his housekeeper insisted, the strikethrough of a paragraph. Mr. Booker, who outlived everyone, retired in 1961 at the age of eighty-two.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000245",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Mr. Whittaker the cat died in 1934, full of years and of the fish that came up the back stairs from Mr. Wong’s, who had become, in the last fifteen years of his life, considerably fond of him.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000246",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "Cornelius wrote no books of his own. He kept the trench-poem notebook, however, on a shelf in his study at home, all his life, and read from it on the anniversary of the Armistice each year, alone, and he believed, until the end, that the failure of it had been the best piece of luck he had ever had. It is the foundational piece of luck of this narrative. Without it, no Hatch & Sons; without Hatch & Sons, no Featherbottom; without Featherbottom, no Reggie; without Reggie, no Cassandra Truthful; without Cassandra Truthful, no luncheon; without luncheon, no — well, no this. It is one of the chief mercies of unsuccessful young men with bad notebooks, that the world will sometimes, if they are sufficiently patient, redirect them into successful young men of the publishing trade. There is, at present, not one of them in this country. There ought, perhaps, to be more.",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "justified"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000247",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "",
+            "marks": []
+          }
+        ],
+        "style_tags": [
+          "empty_line"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      },
+      {
+        "id": "b_000249",
+        "type": "paragraph",
+        "spans": [
+          {
+            "text": "FINIS",
+            "marks": [
+              "bold"
+            ]
+          }
+        ],
+        "style_tags": [
+          "centered"
+        ],
+        "role": "body_paragraph",
+        "classification_notes": [
+          "terminal default applied"
+        ]
+      }
+    ]
+  },
+  "applied_rules": [
+    {
+      "rule": "N-004",
+      "version": "v1",
+      "count": 51,
+      "block_ids": [
+        "b_000023",
+        "b_000026",
+        "b_000028",
+        "b_000030",
+        "b_000031",
+        "b_000034",
+        "b_000045",
+        "b_000046",
+        "b_000051",
+        "b_000052",
+        "b_000059",
+        "b_000063",
+        "b_000072",
+        "b_000081",
+        "b_000086",
+        "b_000089",
+        "b_000090",
+        "b_000091",
+        "b_000094",
+        "b_000112",
+        "b_000119",
+        "b_000130",
+        "b_000140",
+        "b_000149",
+        "b_000150",
+        "b_000152",
+        "b_000182",
+        "b_000189",
+        "b_000205",
+        "b_000211",
+        "b_000212",
+        "b_000221",
+        "b_000222",
+        "b_000233",
+        "b_000245"
+      ]
+    }
+  ],
+  "warnings": [],
+  "rule_faults": []
+}
