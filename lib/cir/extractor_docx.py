@@ -186,7 +186,14 @@ def _emit_paragraph_segment(
     """Emit one CIR block from a list of w:r elements (a paragraph segment)."""
     spans = _runs_to_spans(run_elems)
 
-    # Determine style_tags from alignment + per-run dominant styling.
+    # Determine style_tags by union of three sources:
+    #   1. paragraph alignment (jc) — centered / right_aligned / justified
+    #   2. per-run dominant font ratio against body median — large_font / small_font
+    #   3. named-semantic pStyle synthesis — Title → (centered, large_font), etc.
+    #      (Doc 22 v1.0.3 extractor enhancement)
+    # All three sources can contribute "centered" or "large_font"; dedupe
+    # so the resulting style_tags list never has repeats. The CIR
+    # vocabulary itself is frozen.
     style_tags: List[str] = []
     if alignment:
         style_tags.append(alignment)
@@ -200,6 +207,12 @@ def _emit_paragraph_segment(
                 style_tags.append("large_font")
             elif ratio <= 0.75:
                 style_tags.append("small_font")
+    # Synthesize tags from the named pStyle. Dedupe in-place: append only
+    # if the tag isn't already present (preserves discovery order, which
+    # is incidentally what downstream prose tends to expect).
+    for tag in _synthesized_style_tags_for_pstyle(p_style.get("name")):
+        if tag not in style_tags:
+            style_tags.append(tag)
 
     # Empty paragraph? Emit as type=paragraph with style_tag=empty_line.
     if not spans:
@@ -265,6 +278,40 @@ def _emit_paragraph_segment(
 # ---------------------------------------------------------------------------
 
 _HEADING_STYLE_RE = re.compile(r"^Heading\s*(\d+)$", re.IGNORECASE)
+
+
+# Named-semantic pStyles that the DOCX extractor translates into the CIR's
+# frozen style_tags vocabulary. Per Doc 22 v1.0.3 extractor enhancement
+# (the amendments doc): Pandoc-converted EPUB → DOCX preserves these
+# named pStyles but routinely strips the visual properties (alignment,
+# font size) that downstream style_tag detection relies on. Without this
+# synthesis, C-003's title-page detection comes up empty on Pandoc output;
+# with it, the same C-003 rule fires correctly without modification.
+#
+# Vocabulary frozen for v1; expansion is a Doc 22 amendment, not a code
+# change. Adding a new named pStyle here without the amendment risks
+# emitting style_tags that downstream rules don't expect.
+#
+# Tag synthesis is additive: if the source DOCX *also* carries explicit
+# centering or large-font sizing, the existing alignment / font-ratio
+# detection paths already add those tags; this map's contribution is
+# deduplicated against them in _emit_paragraph_segment().
+_PSTYLE_TO_STYLE_TAGS: Dict[str, Tuple[str, ...]] = {
+    "title":     ("centered", "large_font"),
+    "subtitle":  ("centered", "large_font"),
+    "author":    ("centered",),
+    "booktitle": ("centered", "large_font"),
+}
+
+
+def _synthesized_style_tags_for_pstyle(pstyle_name: Optional[str]) -> Tuple[str, ...]:
+    """Return the synthesized style_tags for a recognized semantic
+    pStyle name, or an empty tuple. Lookup is case-insensitive.
+    """
+    if not pstyle_name:
+        return ()
+    return _PSTYLE_TO_STYLE_TAGS.get(pstyle_name.lower(), ())
+
 
 def _paragraph_style(p_elem: ET.Element) -> Dict[str, Any]:
     """Inspect w:pPr → w:pStyle and derive CIR-relevant fields.

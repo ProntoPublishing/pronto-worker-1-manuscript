@@ -39,7 +39,7 @@ FIXTURES = REPO_ROOT / "tests" / "fixtures" / "v1"
 SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.0.schema.json"
 
 WORKER_VERSION = "5.0.0-a1"  # SemVer 2.0 pre-release marker
-RULES_VERSION = "1.0.2"
+RULES_VERSION = "1.0.3"
 
 
 def _schema_validator():
@@ -159,7 +159,7 @@ class Test_R001_UnsupportedFormat(BaseFixtureTest):
         )
         self.assertEqual(
             key,
-            "services/TALLY-8F3Q/INTFMT/manuscript/v2.0/w5.0.0-a1-r1.0.2/manuscript.json",
+            "services/TALLY-8F3Q/INTFMT/manuscript/v2.0/w5.0.0-a1-r1.0.3/manuscript.json",
         )
 
 
@@ -1019,6 +1019,288 @@ class Test_DeriveStorageIds(BaseFixtureTest):
         intake_id, sku = proc._derive_storage_ids(service, project_id=None)
         self.assertEqual(intake_id, "TALLY_8F3Q_X")
         self.assertEqual(sku, "INT_FMT")
+
+
+class Test_N005_StripExternalLicenseBoilerplate(BaseFixtureTest):
+    """N-005 v1 — Doc 22 v1.0.3 amendment.
+
+    Strip-phase rule, order 3. Removes Project-Gutenberg-style license
+    boilerplate before the classifier runs, so C-001 doesn't promote
+    license headings to chapter_heading.
+    """
+
+    def test_positive_gutenberg_boilerplate_stripped(self):
+        path = self._fixture("n005_gutenberg_pride_and_prejudice.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+
+        # The synthetic Gutenberg fixture has 3 real chapters embedded
+        # between preamble and postscript license blocks. Post-N-005,
+        # the only chapter_heading blocks should be the real ones.
+        chapter_titles = [
+            b.get("chapter_title")
+            for b in ctx.blocks
+            if b.get("role") == "chapter_heading"
+        ]
+        self.assertEqual(
+            sorted(chapter_titles),
+            sorted(["Chapter I", "Chapter II", "Chapter III"]),
+            f"unexpected chapter set after N-005: {chapter_titles}"
+        )
+        # NO chapter_heading should reference Gutenberg license content.
+        for title in chapter_titles:
+            self.assertNotIn("Project Gutenberg", title)
+            self.assertNotIn("Section ", title)
+            self.assertNotIn("END OF", title)
+
+    def test_positive_emits_applied_rules_summary_entry(self):
+        path = self._fixture("n005_gutenberg_pride_and_prejudice.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        n005 = [r for r in ctx.applied_rules if r.get("rule") == "N-005"]
+        self.assertEqual(
+            len(n005), 1,
+            "expected exactly one N-005 applied_rules entry"
+        )
+        entry = n005[0]
+        self.assertEqual(entry["version"], "v1")
+        self.assertGreater(
+            entry["count"], 0,
+            "N-005 entry must carry a non-zero block-removal count"
+        )
+
+    def test_walk_consumes_internal_license_section_headings(self):
+        """Doc 22 v1.0.1-of-amendments end-marker semantic: license
+        sub-headings INSIDE the boilerplate range (e.g., 'Section 1.
+        Information about ...') are consumed by the walk-forward pass,
+        not treated as stop markers. The walk only stops at a
+        non-license heading-level-1 or heading-level-2 (the real
+        Chapter heading) or end-of-document.
+        """
+        path = self._fixture("n005_gutenberg_pride_and_prejudice.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        # No surviving block should carry "Section N." license-section
+        # heading text.
+        for b in ctx.blocks:
+            text = ""
+            if "spans" in b:
+                text = "".join(s.get("text", "") for s in b["spans"])
+            elif "text" in b:
+                text = b["text"]
+            text = (text or "").strip().lower()
+            self.assertFalse(
+                text.startswith("section 1. information"),
+                f"License section heading survived N-005: {text[:80]!r}"
+            )
+            self.assertFalse(
+                text.startswith("section 2. information"),
+                f"License section heading survived N-005: {text[:80]!r}"
+            )
+            self.assertFalse(
+                text.startswith("section 3. information"),
+                f"License section heading survived N-005: {text[:80]!r}"
+            )
+
+    def test_negative_author_text_with_word_gutenberg_unaffected(self):
+        """Negative case: author writes about Gutenberg in their own
+        prose, doesn't use canonical license phrasing. N-005 must NOT
+        fire — the negation guard hinges on the explicit Gutenberg-
+        specific patterns, not generic words.
+        """
+        path = self._fixture("n005_author_supplied_text_with_word_gutenberg.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        n005 = [r for r in ctx.applied_rules if r.get("rule") == "N-005"]
+        self.assertEqual(
+            n005, [],
+            "N-005 fired on a negative-case manuscript whose only "
+            "Gutenberg connection is the literal word 'Gutenberg'"
+        )
+        # Both authored chapters must survive.
+        chapter_titles = [
+            b.get("chapter_title")
+            for b in ctx.blocks
+            if b.get("role") == "chapter_heading"
+        ]
+        self.assertIn("Gutenberg's Workshop", chapter_titles)
+        self.assertIn("The License Question", chapter_titles)
+
+    def test_real_pride_and_prejudice_docx_strips_gutenberg(self):
+        """Integration smoke: run N-005 against the actual Pride and
+        Prejudice DOCX referenced by the amendments doc.
+
+        Two findings the smoke surfaced that are worth recording in
+        the test (so they don't get rediscovered later):
+
+        Finding 1 — Pattern gap. The amendments doc's frozen 6-pattern
+        set catches the OPENING Gutenberg heading ("The Project
+        Gutenberg eBook of Pride and Prejudice") but does NOT catch
+        the CLOSING heading ("THE FULL PROJECT GUTENBERG™ LICENSE").
+        A 7th pattern like /^the full project gutenberg/i would close
+        this. Out of scope for v1.0.3 since the frozen set was
+        explicitly named; flag for amendments v1.0.4.
+
+        Finding 2 — C-001/C-004 boundary. The DOCX has legitimate
+        front-matter Heading2 blocks (PREFACE, List of Illustrations)
+        that C-001 promotes to chapter_heading because C-004 only
+        handles Heading1. Unrelated to N-005; flagged for the next
+        classification-quality conversation.
+
+        Given those two: the actual P&P DOCX has 65 Heading2 blocks
+        and N-005 (frozen pattern set) strips exactly 1 of them,
+        leaving 64 surviving chapter_heading classifications. The
+        test asserts that and explicitly checks that the OPENING
+        Gutenberg preamble is gone while the CLOSING license heading
+        survives (documenting the gap, not regression-protecting it).
+        """
+        path = Path(r"C:\Users\jesse\OneDrive\Documents\pride_and_prejudice.docx")
+        if not path.exists():
+            self.skipTest(f"Pride and Prejudice DOCX not available at {path}")
+
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        chapters = [b for b in ctx.blocks if b.get("role") == "chapter_heading"]
+        chapter_titles = [c.get("chapter_title", "") for c in chapters]
+
+        # Tight range — currently 64 exactly. Range tolerates
+        # whitespace-only changes upstream that shift the heading
+        # count by ±2 without indicating a regression.
+        self.assertGreaterEqual(
+            len(chapters), 62,
+            f"Too few chapters survived N-005 ({len(chapters)}); the "
+            f"rule may be over-stripping real content."
+        )
+        self.assertLessEqual(
+            len(chapters), 66,
+            f"Too many chapters in output ({len(chapters)}); N-005 "
+            f"may have stopped firing on Pandoc Gutenberg license "
+            f"headings."
+        )
+
+        # Opening Gutenberg preamble heading must be gone (this is what
+        # the v1.0.1 frozen pattern set catches today).
+        self.assertFalse(
+            any("Project Gutenberg eBook of" in t for t in chapter_titles),
+            "Opening Gutenberg preamble heading survived N-005"
+        )
+        # Start/end markers (with the *** prefix) must not survive
+        # if any are present.
+        for title in chapter_titles:
+            self.assertNotRegex(
+                title, r"^\*\*\* (START|END) OF.*PROJECT GUTENBERG",
+                f"Gutenberg *** START/END marker survived: {title!r}"
+            )
+
+        # Closing license heading is the documented v1.0.1 gap. Test
+        # currently asserts it SURVIVES — flipping this to assertFalse
+        # is the regression test for whenever amendments v1.0.4 adds
+        # the missing pattern.
+        closing_license_survived = any(
+            "FULL PROJECT GUTENBERG" in t for t in chapter_titles
+        )
+        self.assertTrue(
+            closing_license_survived,
+            "If this fails, amendments v1.0.4 may have added a "
+            "pattern catching the closing license heading. Flip the "
+            "assertion or remove this branch — finding is now closed."
+        )
+
+        n005 = [r for r in ctx.applied_rules if r.get("rule") == "N-005"]
+        self.assertEqual(len(n005), 1, "N-005 entry missing or duplicated")
+        self.assertGreater(n005[0]["count"], 0)
+
+
+class Test_ExtractorPStyleSynthesis(BaseFixtureTest):
+    """v1.0.3 extractor enhancement: named pStyles (Title, Subtitle,
+    Author, BookTitle) → synthesized style_tags. Closes the Pandoc-
+    EPUB-to-DOCX gap where named pStyles survive but visual properties
+    don't.
+    """
+
+    def test_title_pstyle_synthesizes_centered_and_large_font(self):
+        path = self._fixture("extractor_pstyle_title_author.docx")
+        blocks, _ = extract_docx(path)
+        # Find the Title-styled block (paragraph with "A Quiet Day in May").
+        titles = [
+            b for b in blocks
+            if b.get("type") == "paragraph"
+            and "spans" in b
+            and "A Quiet Day in May" in "".join(
+                s.get("text", "") for s in b["spans"]
+            )
+        ]
+        self.assertEqual(len(titles), 1)
+        tags = titles[0].get("style_tags") or []
+        self.assertIn("centered", tags,
+                      "Title pStyle should synthesize 'centered' style_tag")
+        self.assertIn("large_font", tags,
+                      "Title pStyle should synthesize 'large_font' style_tag")
+
+    def test_author_pstyle_synthesizes_centered_only(self):
+        path = self._fixture("extractor_pstyle_title_author.docx")
+        blocks, _ = extract_docx(path)
+        authors = [
+            b for b in blocks
+            if b.get("type") == "paragraph"
+            and "spans" in b
+            and "Some Other Author" in "".join(
+                s.get("text", "") for s in b["spans"]
+            )
+        ]
+        self.assertEqual(len(authors), 1)
+        tags = authors[0].get("style_tags") or []
+        self.assertIn("centered", tags,
+                      "Author pStyle should synthesize 'centered' style_tag")
+        self.assertNotIn("large_font", tags,
+                         "Author pStyle should NOT synthesize 'large_font'")
+
+    def test_dedupe_when_explicit_alignment_and_pstyle_both_set(self):
+        """When the source DOCX has BOTH pStyle=Title AND explicit
+        w:jc=center, both code paths want to add 'centered'. The
+        resulting style_tags must contain 'centered' exactly once.
+        """
+        path = self._fixture("extractor_pstyle_dedupe.docx")
+        blocks, _ = extract_docx(path)
+        target = [
+            b for b in blocks
+            if b.get("type") == "paragraph"
+            and "spans" in b
+            and "Doubly-Marked Title" in "".join(
+                s.get("text", "") for s in b["spans"]
+            )
+        ]
+        self.assertEqual(len(target), 1)
+        tags = target[0].get("style_tags") or []
+        self.assertEqual(
+            tags.count("centered"), 1,
+            f"'centered' duplicated in style_tags: {tags}"
+        )
+        # large_font should still be present (synthesized from Title pStyle).
+        self.assertIn("large_font", tags)
+
+    def test_c003_now_classifies_pandoc_style_title_page(self):
+        """End-to-end: with the extractor enhancement, a Pandoc-style
+        DOCX (named pStyles, no visual properties) should now have its
+        title-page cluster classified by C-003. Before v1.0.3 this
+        cluster came up empty.
+        """
+        path = self._fixture("extractor_pstyle_title_author.docx")
+        ctx, exc = _process_fixture(path)
+        self.assertIsNone(exc)
+        title_pages = [b for b in ctx.blocks if b.get("role") == "title_page"]
+        self.assertGreaterEqual(
+            len(title_pages), 1,
+            "C-003 didn't fire on a Pandoc-style fixture even after "
+            "extractor synthesizes centered+large_font tags. The "
+            "v1.0.3 amendment isn't accomplishing its stated goal."
+        )
+        # And manuscript_meta should have the title.
+        self.assertIsNotNone(ctx.manuscript_meta)
+        self.assertEqual(
+            ctx.manuscript_meta.get("title"),
+            "A Quiet Day in May"
+        )
 
 
 if __name__ == "__main__":
