@@ -121,8 +121,84 @@ Nothing else changed between 1.0.2 and 1.0.3.
   case-insensitive name lookup, dedupe-merged with attribute-derived tags.
   Versions: WORKER_VERSION 5.0.0-a1 → **5.1.0-a1**, RULES_VERSION 1.0.2 → **1.1**
   (worker, local driver, fixture harness, storage-key test).
-- Iter 8: §6 six-book acceptance re-baseline (junk counts post-N-005, deltas
-  recorded here), P&P meta row names its C-003 mechanism.
+- **Iter 8 (2026-07-15): §6 acceptance — 36/36 mechanical rows PASS**
+  (`tests/acceptance_v11.py`, artifacts + report in `.acceptance_out/`).
+
+  **Re-baseline (post-N-005 junk counts + headline numbers):**
+  | Book | Chapters | Parts | Subtitles | N-005 removed | Warnings | Faults |
+  |---|---|---|---|---|---|---|
+  | Hatch | 9/9 (1–9) | 0 | 9 | 0 (author-supplied) | 0 | 0 |
+  | P&P | 61/61 (1–61) | 0 | 0 | 24 | 2 (C-001 fused, ruled) | 0 |
+  | Frankenstein | 27/27 | 3 (numbered from VOL markers) | 0 | 21 | 0 | 0 |
+  | DQ | 126/126 | 1 (Volume II) | 0 | 22 | 0 | 0 |
+  | Leaves | 0 | 34 | 0 | 18 | 0 | 0 |
+  | Carol | 5/5 (1–5) | 0 | 5 | 27 | 0 | 0 |
+
+  All junk chapters across the corpus are attributable to N-005 (boilerplate
+  stripped pre-classification) + the dead catch-all (remaining junk H2s →
+  generic `heading`). **P&P meta mechanism (Q3 row): TAG PATH** — pStyle
+  synthesis supplied centered/large_font on the Pandoc Title/Author styles;
+  every book's members carry "qualified via:" notes in classification_notes.
+
+  **⚠️ Spec-premise mismatches found by acceptance (flagged, resolutions in code):**
+  1. **Frankenstein repeats its title FIVE times, not three** (3 volume pages
+     each followed by an "IN THREE VOLUMES. / VOL. n." paragraph + 2 bare
+     half-titles). C-002 v2 resolution: when any repeated-title candidate has
+     an adjacent part-pattern block, only confirmed candidates classify
+     (numbered from the marker); if none confirm, all repeats classify with
+     null numbers (the spec's imagined shape). Yields exactly 3, numbered 1–3.
+  2. **"Claude Cumberbatch" does not appear anywhere in the_hatch_list.docx**
+     (title page = title / ornament / 3-line subtitle / city / MCMXX year).
+     The §6 meta row's author can only come from INTAKE via H-001
+     reconciliation (H-001 "unchanged" per §3). Acceptance runs Hatch with the
+     Book-01 intake and checks the H-001 decision; manuscript-side author is
+     correctly null. Also fixed: roman-year "MCMXX" no longer name-shapes into
+     the author slot (ordinal-parse guard in C-003 positional logic).
+  3. **Frankenstein Vol I runs LETTER I–IV then CHAPTER I–VII** — one part,
+     two legitimate numbered sequences. V-001 sub-scopes by section-word
+     family (part × word), re-derived from heading text via the matcher.
+     Required for the "V-001 silent" row; spec §2.4 doesn't state it.
+
+  **Schema v2.1 deltas beyond the spec-stated bump (both surfaced by
+  acceptance, both pre-existing):** block `title` property admitted (C-004/
+  C-005 have written it since v1.0.1; v2.0 schema simply omitted it) and
+  warnings rule pattern widened to `^[VHC]-\d{3}$` (Q1/Q2 ruled warnings
+  originate in classify).
+
+  **W1↔W2 coordination (§2.4 "W2 coordination is in §6 acceptance"):** with
+  integer chapter_number, W2's synthesized-title equality check missed every
+  label-shaped title → doubled headings ("CHAPTER 1 / LETTER I"). W2 prereq
+  branch gains `_title_is_label()` (lexicon + arabic/roman/word ordinal parse,
+  mirroring W1 — shared-lib punchlist) → label-shaped titles render once via
+  `\chapter*`, preserving word + ordinal style. And W1 threads caption lines
+  INTO multi-line chapter_title (W2 renders headings from chapter_title only —
+  captions left in block text would silently drop; P&P's 34 ride the W2 v1.3.1
+  multi-line mechanism).
+
+  **§6 render verification (local, W2 v1.4.0 = prereq branch + main merges):**
+  - P&P: 399pp (vs 404 in prod test 20 — delta = N-005's 24 stripped
+    boilerplate blocks + 4 junk chapters gone, attributable), labels roman
+    CHAPTER I→LXI, 34-caption probes render, 0 doubling.
+  - Frankenstein: LETTER I–IV render as LETTERS (word preserved), chapters
+    roman per volume (I–VII / I–IX / I–VII), 0 doubling, 3 volume title pages
+    as part dividers + 2 half-titles as faithful generic headings, H-001
+    title page from extracted meta.
+  - Hatch: CHAPTER ONE…NINE (spelled style preserved), italic subtitles
+    render, 33pp.
+  - Carol: staves render once (letter-spaced heading style), stave-name
+    subtitles beneath, source's own contents page carried faithfully.
+  - DQ: 1,180pp, 126 numbered chapter labels, per-volume restarts (max 74),
+    Volume II part divider.
+  - **TOC + running headers: W2's template has neither** (no
+    \tableofcontents; prod P&P has none either) — pre-existing template gap,
+    same bucket as the addendum's "Noted, not ruled" running-headers item →
+    rides Doc 23 render-contract work. The §6 "TOC/headers … sane" wording is
+    read as "numbering sane" for this gate; FLAGGED for the spec owner.
+  - **W2 render_local caveat:** pdf_generator's PDF-existence success
+    criterion reports stale success when a previous local.pdf exists in the
+    outdir and the new pass fails (MiKTeX first-pass nag). Acceptance renders
+    were re-done in clean outdirs. Worth a small W2 fix (delete target before
+    compile) — punchlist.
 
 ---
 

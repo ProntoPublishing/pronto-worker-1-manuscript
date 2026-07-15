@@ -156,12 +156,20 @@ class C001_LandmarkClassification:
         block["role"] = "chapter_heading"
         block["chapter_number"] = m.ordinal
         if m.trailing_title:
-            block["chapter_title"] = m.trailing_title
+            base = m.trailing_title
         else:
-            block["chapter_title"] = (
-                f"{m.section_word.title()} {m.ordinal_display}"
-            )
+            base = f"{m.section_word.title()} {m.ordinal_display}"
             _add_note(block, "chapter_title synthesized from number-only heading")
+        # Caption routing (Q1 / §2.3): W2 renders chapter headings from
+        # chapter_title alone, and its multi-line mechanism (W2 v1.3.1)
+        # styles the label line and renders every other line as a
+        # centered italic caption beneath. Caption lines therefore ride
+        # IN chapter_title — leaving them only in the block text would
+        # drop them from the rendered book (P&P's 34).
+        if m.caption_lines:
+            block["chapter_title"] = "\n".join([base, *m.caption_lines])
+        else:
+            block["chapter_title"] = base
         self._common_notes(ctx, block, m)
 
     def _assign_unnumbered(
@@ -208,8 +216,19 @@ class C002_StructuralPartDetection:
 
     Pattern-matching part-words are C-001 v2's job (any stratum). What
     remains for C-002 is Frankenstein's shape: identical heading blocks
-    repeated in a stratum ABOVE the dominant landmark stratum (its three
-    volume title pages) → part_divider with a null part_number.
+    repeated in a stratum ABOVE the dominant landmark stratum (its
+    volume title pages) → part_divider.
+
+    Corpus-reality refinement (spec-premise mismatch, see
+    MIGRATION_NOTES "Frankenstein 5-vs-3"): the 1818 source repeats the
+    identical title FIVE times — three true volume pages (each followed
+    by an "IN THREE VOLUMES. / VOL. n." block) plus two bare
+    half-titles. When any repeated candidate has an adjacent following
+    block whose per-line scan yields a part-class match, only the
+    confirmed candidates become part_dividers, numbered from the
+    adjacent match. When NO candidate confirms (the spec's imagined
+    all-bare shape), every repeat classifies with part_number null —
+    the rule "as before".
 
     Only fires when the dominant stratum is a heading stratum (a
     paragraph-stratum book has no "above"). Skips role-carrying blocks
@@ -221,6 +240,8 @@ class C002_StructuralPartDetection:
     order = 2
     version = "v2"
 
+    _ADJACENT_LOOKAHEAD = 3  # blocks to scan for the VOL-line confirmation
+
     def run(self, ctx: RuleContext) -> None:
         analysis = ctx.extras.get("strata")
         if analysis is None or analysis.dominant is None:
@@ -231,8 +252,8 @@ class C002_StructuralPartDetection:
 
         # Candidate population: unclassified heading blocks strictly
         # above (numerically lower level than) the dominant stratum.
-        candidates: List[Dict[str, Any]] = [
-            b for b in ctx.blocks
+        candidates: List[int] = [
+            i for i, b in enumerate(ctx.blocks)
             if not _has_role(b)
             and b.get("type") == "heading"
             and (b.get("heading_level") or 0) < dom_level
@@ -241,20 +262,66 @@ class C002_StructuralPartDetection:
             return
 
         from collections import Counter
-        texts = Counter(normalize_ws(_block_text(b)) for b in candidates)
+        texts = Counter(
+            normalize_ws(_block_text(ctx.blocks[i])) for i in candidates
+        )
+        repeated = [
+            i for i in candidates
+            if normalize_ws(_block_text(ctx.blocks[i]))
+            and texts[normalize_ws(_block_text(ctx.blocks[i]))] >= 2
+        ]
+        if not repeated:
+            return
 
-        for b in candidates:
+        confirmations = {i: self._adjacent_part_match(ctx.blocks, i)
+                         for i in repeated}
+        any_confirmed = any(m is not None for m in confirmations.values())
+
+        for i in repeated:
+            b = ctx.blocks[i]
             norm = normalize_ws(_block_text(b))
-            if norm and texts[norm] >= 2:
-                b["role"] = "part_divider"
-                b["part_number"] = None
-                b["part_title"] = norm
-                b["force_page_break"] = True
+            m = confirmations[i]
+            if any_confirmed and m is None:
                 _add_note(
                     b,
-                    f"repeated-book-title shape (§2.3): identical heading "
-                    f"×{texts[norm]} above the landmark stratum",
+                    "repeated-book-title candidate NOT confirmed by an "
+                    "adjacent part marker — left for terminal default "
+                    "(bare half-title; see MIGRATION_NOTES)",
                 )
+                continue
+            b["role"] = "part_divider"
+            b["part_number"] = m.ordinal if m else None
+            b["part_title"] = norm
+            b["force_page_break"] = True
+            _add_note(
+                b,
+                f"repeated-book-title shape (§2.3): identical heading "
+                f"×{texts[norm]} above the landmark stratum"
+                + (f"; part_number {m.ordinal} from adjacent "
+                   f"'{m.section_word} {m.ordinal_display}' marker"
+                   if m else ""),
+            )
+
+    def _adjacent_part_match(self, blocks, i) -> Optional[LandmarkMatch]:
+        """Scan a few following blocks for a part-class pattern line
+        (Frankenstein's 'IN THREE VOLUMES. / VOL. n.' paragraph)."""
+        seen = 0
+        for j in range(i + 1, len(blocks)):
+            if seen >= self._ADJACENT_LOOKAHEAD:
+                return None
+            b = blocks[j]
+            text = _block_text(b)
+            if not normalize_ws(text):
+                continue  # empty_line spacers don't consume lookahead
+            seen += 1
+            if _has_role(b):
+                return None
+            scan = match_landmark_lines(text)
+            if scan.match is not None and scan.match.kind == "part":
+                return scan.match
+            if scan.match is not None:
+                return None  # a chapter landmark ends the title page
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -336,11 +403,11 @@ class C006_ChapterSubtitle:
 
     @staticmethod
     def _style_gate(cand, landmark) -> Optional[str]:
-        tags = cand.get("style_tags") or []
-        if "italic" in tags:
-            return "italic tag"
-        if "centered" in tags:
-            return "centered tag"
+        from .strata import has_visual
+        if has_visual(cand, "italic"):
+            return "italic"
+        if has_visual(cand, "centered"):
+            return "centered"
         if (
             cand.get("type") == "heading"
             and landmark.get("type") == "heading"
@@ -645,10 +712,24 @@ class C003_TitlePage:
             return "title"
         if "shape:byline" in signals:
             return "author_or_byline"
+        # Display-styled members (large_font / heading-typed) read as
+        # subtitle material, as in v1. For plain members, byline shape
+        # ("By X") or a short name-shaped run of capitalized words is
+        # the author; anything else (Hatch's long "Being a True…"
+        # subtitle, which v1 mislabeled as the author) is subtitle.
         tags = block.get("style_tags") or []
         if "large_font" in tags or block.get("type") == "heading":
             return "subtitle"
-        return "author_or_byline"
+        text = normalize_ws(_block_text(block))
+        if self._BYLINE_RE.match(text):
+            return "author_or_byline"
+        if self._NAME_RE.match(text):
+            from .ordinals import parse_ordinal
+            # Roman-numeral years ("MCMXX") are name-shaped but not
+            # authors; anything the ordinal parser accepts is excluded.
+            if parse_ordinal(text.rstrip(".")) is None:
+                return "author_or_byline"
+        return "subtitle"
 
 
 # ---------------------------------------------------------------------------

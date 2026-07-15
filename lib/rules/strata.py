@@ -52,6 +52,18 @@ def _block_text(block: Dict[str, Any]) -> str:
     return block.get("text", "") or ""
 
 
+def has_visual(block: Dict[str, Any], name: str) -> bool:
+    """True when a visual property applies to the whole block: present
+    in style_tags, OR carried as a span mark on EVERY non-empty span
+    (the DOCX extractor emits run styling like bold/italic as span
+    marks, not block tags — Hatch's chapter paragraphs are the
+    motivating case)."""
+    if name in (block.get("style_tags") or []):
+        return True
+    spans = [s for s in (block.get("spans") or []) if (s.get("text") or "").strip()]
+    return bool(spans) and all(name in (s.get("marks") or []) for s in spans)
+
+
 def is_visually_gated(block: Dict[str, Any]) -> bool:
     """§2.2 paragraph-stratum gate: short + centered + (bold OR
     large_font). Never promotes a block alone — only locates the
@@ -59,10 +71,9 @@ def is_visually_gated(block: Dict[str, Any]) -> bool:
     """
     if block.get("type") != "paragraph":
         return False
-    tags = block.get("style_tags") or []
-    if "centered" not in tags:
+    if not has_visual(block, "centered"):
         return False
-    if "bold" not in tags and "large_font" not in tags:
+    if not (has_visual(block, "bold") or has_visual(block, "large_font")):
         return False
     return len(normalize_ws(_block_text(block))) <= SHORT_TEXT_MAX
 

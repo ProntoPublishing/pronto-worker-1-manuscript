@@ -24,3 +24,5 @@ venv/
 ENV/
 /tmp/
 *.log
+
+.acceptance_out/

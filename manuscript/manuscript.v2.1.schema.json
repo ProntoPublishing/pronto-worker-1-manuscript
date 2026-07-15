@@ -375,6 +375,10 @@
             null
           ],
           "description": "Present on unnumbered landmarks (role=chapter_heading with chapter_number null) per amendment spec v2.2 §2.1b. Absent on numbered landmarks."
+        },
+        "title": {
+          "type": "string",
+          "description": "Present on role=front_matter / back_matter (C-004/C-005 write the matched heading text). Schema omission in v2.0 surfaced by the v1.1 acceptance runs; codified in v2.1."
         }
       },
       "oneOf": [
@@ -566,8 +570,8 @@
       "properties": {
         "rule": {
           "type": "string",
-          "pattern": "^[VH]-\\d{3}$",
-          "description": "Doc 22 rule id that produced the warning. Layer 3 validators (V-###) are the primary source; Layer 5 rules (H-###) may also emit divergence warnings — e.g., H-001 flags intake-vs-manuscript title mismatches."
+          "pattern": "^[VHC]-\\d{3}$",
+          "description": "Doc 22 rule id that produced the warning. Layer 3 validators (V-###) are the primary source; Layer 5 rules (H-###) may also emit divergence warnings — e.g., H-001 flags intake-vs-manuscript title mismatches. v2.1: C-rule warnings admitted (Q1 ambiguity + Q2 fused-heading normalization warnings originate in the classify phase per the v2.2.1 rulings)."
         },
         "severity": {
           "type": "string",

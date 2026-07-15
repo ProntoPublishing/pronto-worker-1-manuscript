@@ -75,25 +75,46 @@ class V001_ChapterNumberContinuity:
     @staticmethod
     def _scoped_chapters(blocks):
         """[(scope_label, [(block_id, chapter_number), ...]), ...] in
-        document order; scope 0 is the implicit first part."""
-        scopes = [("implicit first part", [])]
+        document order. Scoping is part_divider × section-word family:
+        Frankenstein's Volume I runs LETTER I–IV then CHAPTER I–VII —
+        two independent numbered sequences inside one part, both
+        legitimate (§6 requires V-001 silent there). The section word
+        is re-derived from the heading text via the landmark matcher
+        (pure function; the block doesn't persist it)."""
+        from .landmarks import match_landmark_lines
+
+        part_idx = 0
+        part_label = "implicit first part"
+        scopes: Dict[tuple, List] = {}
+        order: List[tuple] = []
         for b in blocks:
             role = b.get("role")
             if role == "part_divider":
-                label = (
+                part_idx += 1
+                part_label = str(
                     b.get("part_title")
                     or (f"part {b.get('part_number')}"
                         if b.get("part_number") is not None else None)
                     or b.get("id") or "unnamed part"
                 )
-                scopes.append((str(label), []))
             elif role == "chapter_heading":
                 if b.get("landmark_subtype"):
                     continue  # §2.1b unnumbered — excluded from sequence math
                 n = b.get("chapter_number")
-                if isinstance(n, int):
-                    scopes[-1][1].append((b.get("id"), n))
-        return scopes
+                if not isinstance(n, int):
+                    continue
+                text = _block_text(b)
+                scan = match_landmark_lines(text)
+                word = (
+                    scan.match.section_word.lower().rstrip(".")
+                    if scan.match and scan.match.section_word else "chapter"
+                )
+                key = (part_idx, word)
+                if key not in scopes:
+                    scopes[key] = []
+                    order.append((key, f"{part_label} / {word}s"))
+                scopes[key].append((b.get("id"), n))
+        return [(label, scopes[key]) for key, label in order]
 
 
 def _first_gap_detail(observed: List[int]) -> str:
