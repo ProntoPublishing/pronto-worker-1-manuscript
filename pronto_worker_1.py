@@ -74,8 +74,11 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.0.0-a1"   # SemVer 2.0 pre-release. Bump to "5.0.0" on release.
-RULES_VERSION = "1.0.2"       # Doc 22 version this worker implements.
+WORKER_VERSION = "5.1.0-a1"   # SemVer 2.0 pre-release. Bump to "5.1.0" on release.
+RULES_VERSION = "1.1"         # Doc 22 version this worker implements
+                              # (v1.1 = classification amendment, spec v2.2
+                              # + v2.2.1 rulings; ships the v1.0.3 extractor
+                              # deltas per ruling Q3).
 
 # Fault-threshold policy from Doc 22 §Operational Policy (v1.0 defaults).
 MAX_LAYER_2_FAULTS_BEFORE_FAIL = 3

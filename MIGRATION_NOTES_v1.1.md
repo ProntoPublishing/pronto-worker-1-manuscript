@@ -112,7 +112,17 @@ Nothing else changed between 1.0.2 and 1.0.3.
   side-decision:** a missing wordfreq backend is now a log line + extras note, NOT a
   rule_fault (an observational rule shouldn't pollute Rule Fault Count); flagging
   here since Doc 22 v1.0.1 specified the fault.
-- Iter 7+: N-005, pStyle synthesis (ruled IN by Q3), rules_version bump to 1.1.
+- **Iter 7 (DONE, 2026-07-15): Doc 22 v1.0.3 deltas shipped (ruling Q3) + version
+  bumps.** N-005 (`lib/rules/normalization.py`, strip order 3): the six frozen
+  canon patterns verbatim from `22-manuscript-normalization-rules-v1.0.3.md.docx`,
+  heading-anchored forward walk with the negation guard, single summary
+  applied_rules entry. pStyle→style_tags synthesis in `lib/cir/extractor_docx.py`:
+  frozen table (Title/Subtitle/BookTitle → centered+large_font; Author → centered),
+  case-insensitive name lookup, dedupe-merged with attribute-derived tags.
+  Versions: WORKER_VERSION 5.0.0-a1 → **5.1.0-a1**, RULES_VERSION 1.0.2 → **1.1**
+  (worker, local driver, fixture harness, storage-key test).
+- Iter 8: §6 six-book acceptance re-baseline (junk counts post-N-005, deltas
+  recorded here), P&P meta row names its C-003 mechanism.
 
 ---
 

@@ -201,6 +201,15 @@ def _emit_paragraph_segment(
             elif ratio <= 0.75:
                 style_tags.append("small_font")
 
+    # pStyle → style_tags synthesis (Doc 22 v1.0.3, frozen table):
+    # semantically-loaded named styles imply presentation even when the
+    # paragraph carries no explicit alignment/size attributes (Pandoc
+    # and Word default Title/Author styles emit no explicit centering).
+    # Dedupe-merged with the attribute-derived tags above.
+    for tag in _PSTYLE_SYNTHESIS.get((p_style.get("name") or "").lower(), ()):
+        if tag not in style_tags:
+            style_tags.append(tag)
+
     # Empty paragraph? Emit as type=paragraph with style_tag=empty_line.
     if not spans:
         style_tags.append("empty_line")
@@ -265,6 +274,15 @@ def _emit_paragraph_segment(
 # ---------------------------------------------------------------------------
 
 _HEADING_STYLE_RE = re.compile(r"^Heading\s*(\d+)$", re.IGNORECASE)
+
+# Doc 22 v1.0.3 pStyle-name → style_tags synthesis table (FROZEN).
+# Keys lowercased for the case-insensitive lookup.
+_PSTYLE_SYNTHESIS = {
+    "title":     ("centered", "large_font"),
+    "subtitle":  ("centered", "large_font"),
+    "booktitle": ("centered", "large_font"),
+    "author":    ("centered",),
+}
 
 def _paragraph_style(p_elem: ET.Element) -> Dict[str, Any]:
     """Inspect w:pPr → w:pStyle and derive CIR-relevant fields.

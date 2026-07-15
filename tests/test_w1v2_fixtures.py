@@ -38,8 +38,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = REPO_ROOT / "tests" / "fixtures" / "v1"
 SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.1.schema.json"
 
-WORKER_VERSION = "5.0.0-a1"  # SemVer 2.0 pre-release marker
-RULES_VERSION = "1.0.2"
+WORKER_VERSION = "5.1.0-a1"  # SemVer 2.0 pre-release marker
+RULES_VERSION = "1.1"
 
 
 def _schema_validator():
@@ -159,7 +159,7 @@ class Test_R001_UnsupportedFormat(BaseFixtureTest):
         )
         self.assertEqual(
             key,
-            "services/TALLY-8F3Q/INTFMT/manuscript/v2.1/w5.0.0-a1-r1.0.2/manuscript.json",
+            "services/TALLY-8F3Q/INTFMT/manuscript/v2.1/w5.1.0-a1-r1.1/manuscript.json",
         )
 
 
