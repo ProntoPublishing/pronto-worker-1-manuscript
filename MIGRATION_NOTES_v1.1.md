@@ -86,8 +86,24 @@ Nothing else changed between 1.0.2 and 1.0.3.
   W2 prereq branch (`feature/w2-schema-2.1-prereq`, accepts "2.1").
   Note: v1.0.2 fixture suite passed unchanged except the storage-key version segment
   and an import — the amendment preserves the catch-all's true positives by design.
-- Iter 5+: chapter_subtitle role assignment (§2.3 below-stratum), C-003 redesign (§3),
-  validators (§4), N-005, pStyle synthesis (ruled IN by Q3), rules_version bump.
+- **Iter 5 (DONE, 2026-07-15): C-006 chapter_subtitle + C-003 v2.**
+  `C006_ChapterSubtitle` (classify order 3): adjacent-below a landmark (empty_line
+  blocks skipped) + short + style gate (italic / centered / subordinate heading
+  level); scene-break ornaments excluded (must carry a letter/digit). **Rule id
+  C-006 is provisional** — the spec names no Doc 22 id for the §2.3 promotion;
+  confirm when Doc 22 v1.1 is drafted.
+  `C003_TitlePage` v2 (§3): window = document start → first sustained body run
+  (2+ consecutive ≥200-char paragraphs), cap 40 blocks, landmark-independent but
+  never crossing a classified landmark; accepts paragraphs AND headings; candidate
+  = short + alnum; **qualification = 2+ independent signals** from {tag:centered,
+  tag:large_font, level:h1/h2, position:early} — the "no single precondition
+  load-bearing" reading; threshold is the implementation choice, recorded here.
+  Byline adjacency exception carried from v1 ("By X" / short name line).
+  **Q3 mechanism attribution:** every member notes "qualified via: <signals>";
+  summary at ctx.extras["c003_mechanism"] = "tag path" | "position/shape path".
+  Classify order now: C-001, C-002, C-006, C-004, C-005, C-003.
+- Iter 6+: validators (§4), N-005, pStyle synthesis (ruled IN by Q3), rules_version
+  bump to 1.1.
 
 ---
 

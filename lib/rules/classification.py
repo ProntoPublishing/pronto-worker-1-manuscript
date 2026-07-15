@@ -258,6 +258,104 @@ class C002_StructuralPartDetection:
 
 
 # ---------------------------------------------------------------------------
+# C-006: chapter_subtitle promotion (spec §2.3 "Below → chapter_subtitle")
+# ---------------------------------------------------------------------------
+
+class C006_ChapterSubtitle:
+    """C-006 v1: promote the block adjacent-below a landmark to
+    role=chapter_subtitle when it is short AND style-gated.
+
+    Spec §2.3: "Carol's stave names (H4), Hatch's italic subtitles:
+    adjacent-below a landmark + short + style-gated (italic, centered,
+    or subordinate heading level) — never position alone."
+
+    Gates (ALL required):
+      - adjacent-below a chapter_heading or part_divider (empty_line
+        paragraphs between are skipped — they are layout, not content);
+      - unclassified (I-10);
+      - type paragraph or heading;
+      - short (normalized length <= strata.SHORT_TEXT_MAX) and carrying
+        at least one letter/digit (scene-break markers like "* * *"
+        must not promote);
+      - style gate: 'italic' tag, OR 'centered' tag, OR a heading level
+        subordinate to a heading-typed landmark.
+
+    Rule id note: the amendment spec names no Doc 22 id for this rule;
+    C-006 is the next free classifier id, to be confirmed when Doc 22
+    v1.1 is drafted (MIGRATION_NOTES).
+    """
+
+    id = "C-006"
+    phase = "classify"
+    order = 3
+    version = "v1"
+
+    _LANDMARK_ROLES = {"chapter_heading", "part_divider"}
+
+    def run(self, ctx: RuleContext) -> None:
+        from .strata import SHORT_TEXT_MAX
+
+        blocks = ctx.blocks
+        for i, landmark in enumerate(blocks):
+            if landmark.get("role") not in self._LANDMARK_ROLES:
+                continue
+            j = self._next_content_index(blocks, i + 1)
+            if j is None:
+                continue
+            cand = blocks[j]
+            if _has_role(cand):
+                continue
+            if cand.get("type") not in ("paragraph", "heading"):
+                continue
+            text = normalize_ws(_block_text(cand))
+            if not text or len(text) > SHORT_TEXT_MAX:
+                continue
+            if not any(ch.isalnum() for ch in text):
+                continue
+            gate = self._style_gate(cand, landmark)
+            if gate is None:
+                continue
+            cand["role"] = "chapter_subtitle"
+            _add_note(
+                cand,
+                f"chapter_subtitle promoted (§2.3): adjacent-below "
+                f"{landmark.get('id')}, gate: {gate}",
+            )
+
+    @staticmethod
+    def _next_content_index(blocks, start: int) -> Optional[int]:
+        for j in range(start, len(blocks)):
+            b = blocks[j]
+            tags = b.get("style_tags") or []
+            if b.get("type") == "paragraph" and "empty_line" in tags:
+                continue
+            if not normalize_ws(_block_text(b)):
+                continue
+            return j
+        return None
+
+    @staticmethod
+    def _style_gate(cand, landmark) -> Optional[str]:
+        tags = cand.get("style_tags") or []
+        if "italic" in tags:
+            return "italic tag"
+        if "centered" in tags:
+            return "centered tag"
+        if (
+            cand.get("type") == "heading"
+            and landmark.get("type") == "heading"
+            and (cand.get("heading_level") or 0)
+            > (landmark.get("heading_level") or 0)
+        ):
+            return (
+                f"subordinate heading level "
+                f"(H{cand.get('heading_level')} under "
+                f"H{landmark.get('heading_level')})"
+            )
+        return None
+
+
+# ---------------------------------------------------------------------------
 # C-004: Front-matter classification
 # ---------------------------------------------------------------------------
 
@@ -379,93 +477,122 @@ def _back_subtype_from_match(m: "re.Match[str]") -> str:
 # ---------------------------------------------------------------------------
 
 class C003_TitlePage:
-    """C-003 v1 (with v1.0.1 Patch 5 reword): identify the opening cluster
-    of paragraphs that appear before any block with role ∈
-    {chapter_heading, part_divider, front_matter, back_matter}, and mark
-    qualifying members as role=title_page.
+    """C-003 v2 — spec §3 redesign: all three v1 preconditions decoupled.
 
-    Qualification per block (per Doc 22 v1.0.1 C-003):
-      - style_tags[] contains 'centered'
-      - style_tags[] contains 'large_font' OR the block is the author line
-        immediately following large-font blocks
-      - text length < 200 chars
-      - no existing role (I-10)
+    v1 died on all six corpus books via three distinct precondition
+    failures (no-landmark / no-tags / heading-typed-cluster). v2:
 
-    Title / subtitle / author extraction (what Doc 22 v1.0.1 calls
-    "extract {title, subtitle, author}") currently records its findings
-    in classification_notes[] per block. The v2.0 schema doesn't yet
-    define block-level fields for those tokens. See iter-3 schema gap
-    note at the bottom of this file.
+      - Cluster bounded by POSITION AND SHAPE, landmark-independent:
+        the window runs from document start to the first sustained body
+        run (2+ consecutive long unclassified paragraphs), capped at
+        _WINDOW_MAX_BLOCKS.
+      - Accepts paragraph AND heading blocks.
+      - Scores each short candidate by independent signals — style tags
+        (centered / large_font), heading level (H1/H2), early position.
+        Qualification = 2+ distinct signals, so no single precondition
+        is load-bearing. (Threshold choice recorded in MIGRATION_NOTES.)
+      - The author line keeps its v1 adjacency exception: a short block
+        immediately after qualified members that matches the byline
+        shape ("By X" / short capitalized-name line) joins the cluster.
+
+    Q3 ruling: the mechanism that satisfied extraction is recorded in
+    classification_notes on every member ("qualified via: …") and
+    summarized at ctx.extras["c003_mechanism"] ("tag path" when any
+    member qualified through style tags, else "position/shape path") —
+    the P&P acceptance row must name which fired.
+
+    H-001 unchanged; reads ctx.manuscript_meta as before.
     """
 
     id = "C-003"
     phase = "classify"
-    order = 5
-    version = "v1"
+    order = 6
+    version = "v2"
+
+    _WINDOW_MAX_BLOCKS = 40
+    _SHAPE_MAX_CHARS = 200      # candidate shortness (shape gate)
+    _BODY_RUN_CHARS = 200       # a long paragraph, for the body-run bound
+    _BODY_RUN_LEN = 2           # consecutive long paragraphs ending the window
+    _EARLY_POSITION = 8         # "early" = among the first N content blocks
+
+    _BYLINE_RE = re.compile(r"^by\s+\S+", re.IGNORECASE)
+    _NAME_RE = re.compile(r"^(?:[A-Z][\w.'’-]*\s+){0,3}[A-Z][\w.'’-]*$")
 
     def run(self, ctx: RuleContext) -> None:
-        cutoff_idx = _first_index_with_role(
-            ctx.blocks,
-            {"chapter_heading", "part_divider", "front_matter", "back_matter"},
-        )
-        if cutoff_idx is None:
-            return  # no classified landmark → no title-page cluster to bound.
+        window = self._window(ctx.blocks)
+        if not window:
+            return
 
-        # Collect candidate cluster members: paragraphs up to the cutoff,
-        # all centered, all short, none already role-assigned.
-        candidates: List[int] = []
-        for i in range(cutoff_idx):
+        # Score candidates inside the window.
+        members: List[int] = []           # indices into ctx.blocks
+        signals_by_idx: Dict[int, List[str]] = {}
+        content_seen = 0
+        tag_path_used = False
+        for i in window:
             b = ctx.blocks[i]
+            text = normalize_ws(_block_text(b))
+            if not text:
+                continue
+            content_seen += 1
+            if b.get("role") in ("chapter_heading", "part_divider"):
+                # The window never REQUIRES landmarks (§3 independence)
+                # but a title page cannot start past the first one.
+                break
             if _has_role(b):
                 continue
-            if b.get("type") != "paragraph":
+            if b.get("type") not in ("paragraph", "heading"):
                 continue
+            if len(text) >= self._SHAPE_MAX_CHARS:
+                continue
+            if not any(ch.isalnum() for ch in text):
+                continue  # ornament lines ("* * *") are not title material
+
+            signals: List[str] = []
             tags = b.get("style_tags") or []
-            if "centered" not in tags:
-                continue
-            if len(_block_text(b)) >= 200:
-                continue
-            candidates.append(i)
-
-        if not candidates:
-            return
-
-        # Qualify the cluster: the first block with large_font anchors it.
-        # Allow the immediately-following block (the author line) even if
-        # it doesn't carry large_font — the byline typically sits below
-        # title/subtitle in smaller type but is still part of the cluster.
-        large_font_seen = False
-        cluster_members: List[int] = []
-        for i in candidates:
-            tags = ctx.blocks[i].get("style_tags") or []
+            if "centered" in tags:
+                signals.append("tag:centered")
             if "large_font" in tags:
-                large_font_seen = True
-                cluster_members.append(i)
-            elif large_font_seen and (not cluster_members or i == cluster_members[-1] + 1):
-                cluster_members.append(i)
-            else:
-                # Cluster broken — subsequent centered paragraphs don't
-                # belong to a title page if we've left the contiguous
-                # run following large_font anchors.
-                break
+                signals.append("tag:large_font")
+            if b.get("type") == "heading" and (b.get("heading_level") or 9) <= 2:
+                signals.append(f"level:h{b.get('heading_level')}")
+            if content_seen <= self._EARLY_POSITION:
+                signals.append("position:early")
 
-        if not cluster_members:
+            if len(signals) >= 2:
+                if members and i - members[-1] > 3:
+                    break  # cluster is contiguous-ish; a far gap ends it
+                members.append(i)
+                signals_by_idx[i] = signals
+                if any(s.startswith("tag:") for s in signals):
+                    tag_path_used = True
+            elif members:
+                # Byline adjacency exception (v1-carryover): short
+                # unqualified block directly after the cluster that
+                # looks like an author line.
+                if i == members[-1] + 1 and (
+                    self._BYLINE_RE.match(text) or self._NAME_RE.match(text)
+                ):
+                    members.append(i)
+                    signals_by_idx[i] = ["shape:byline", "position:adjacent"]
+                break  # cluster ends at the first non-qualifying content
+        if not members:
             return
 
-        # Assign role + positional note. First member = title, subsequent
-        # large_font members = subtitle (joined if there are several),
-        # non-large_font trailing member = author/byline. The positional
-        # tag goes on each block's classification_notes[] for traceability;
-        # the authoritative extraction lands on ctx.manuscript_meta, which
-        # emit() surfaces at the artifact top level.
+        mechanism = "tag path" if tag_path_used else "position/shape path"
+        ctx.extras["c003_mechanism"] = mechanism
+
         extracted = {"title": None, "subtitle": None, "author": None}
         subtitle_parts: List[str] = []
-        for idx, i in enumerate(cluster_members):
+        for idx, i in enumerate(members):
             block = ctx.blocks[i]
             block["role"] = "title_page"
-            positional = _title_page_positional_role(block, idx, cluster_members, ctx.blocks)
+            positional = self._positional(block, idx, signals_by_idx[i])
             _add_note(block, f"title_page positional role: {positional}")
-
+            _add_note(
+                block,
+                f"title_page qualified via: {'+'.join(signals_by_idx[i])} "
+                f"(C-003 v2 {mechanism})",
+            )
             text = _block_text(block).strip()
             if positional == "title" and not extracted["title"]:
                 extracted["title"] = text or None
@@ -478,8 +605,6 @@ class C003_TitlePage:
         if subtitle_parts:
             extracted["subtitle"] = " ".join(subtitle_parts)
 
-        # Merge with any prior manuscript_meta (classifier-order doesn't
-        # currently have another writer, but keep the merge defensive).
         if ctx.manuscript_meta is None:
             ctx.manuscript_meta = extracted
         else:
@@ -487,23 +612,43 @@ class C003_TitlePage:
                 if v is not None and not ctx.manuscript_meta.get(k):
                     ctx.manuscript_meta[k] = v
 
+    # -- helpers ------------------------------------------------------------
 
-def _title_page_positional_role(
-    block: Dict[str, Any],
-    idx_in_cluster: int,
-    cluster_members: List[int],
-    all_blocks: List[Dict[str, Any]],
-) -> str:
-    """Best-effort label for each title_page block's contribution to the
-    cluster. Not structural — just a human/operator aid in
-    classification_notes[].
-    """
-    if idx_in_cluster == 0:
-        return "title"
-    tags = block.get("style_tags") or []
-    if "large_font" in tags:
-        return "subtitle"
-    return "author_or_byline"
+    def _window(self, blocks: List[Dict[str, Any]]) -> List[int]:
+        """Indices from document start to the first sustained body run
+        (landmark-independent), capped at _WINDOW_MAX_BLOCKS."""
+        out: List[int] = []
+        long_run = 0
+        for i, b in enumerate(blocks):
+            if i >= self._WINDOW_MAX_BLOCKS:
+                break
+            text = normalize_ws(_block_text(b))
+            if (
+                b.get("type") == "paragraph"
+                and not _has_role(b)
+                and len(text) >= self._BODY_RUN_CHARS
+            ):
+                long_run += 1
+                if long_run >= self._BODY_RUN_LEN:
+                    # The run itself is body — drop its already-collected
+                    # first member(s) from the window.
+                    return [j for j in out if j < i - (long_run - 1)]
+            else:
+                long_run = 0
+            out.append(i)
+        return out
+
+    def _positional(
+        self, block: Dict[str, Any], idx_in_cluster: int, signals: List[str],
+    ) -> str:
+        if idx_in_cluster == 0:
+            return "title"
+        if "shape:byline" in signals:
+            return "author_or_byline"
+        tags = block.get("style_tags") or []
+        if "large_font" in tags or block.get("type") == "heading":
+            return "subtitle"
+        return "author_or_byline"
 
 
 # ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@ from .classification import (
     C003_TitlePage,
     C004_FrontMatter,
     C005_BackMatter,
+    C006_ChapterSubtitle,
 )
 from .validation import (
     V001_ChapterNumberContinuity,
@@ -55,9 +56,10 @@ RULE_REGISTRY: List[Dict[str, object]] = [
 
     {"id": "C-001", "phase": "classify",  "order": 1, "factory": C001_LandmarkClassification},
     {"id": "C-002", "phase": "classify",  "order": 2, "factory": C002_StructuralPartDetection},
-    {"id": "C-004", "phase": "classify",  "order": 3, "factory": C004_FrontMatter},
-    {"id": "C-005", "phase": "classify",  "order": 4, "factory": C005_BackMatter},
-    {"id": "C-003", "phase": "classify",  "order": 5, "factory": C003_TitlePage},
+    {"id": "C-006", "phase": "classify",  "order": 3, "factory": C006_ChapterSubtitle},
+    {"id": "C-004", "phase": "classify",  "order": 4, "factory": C004_FrontMatter},
+    {"id": "C-005", "phase": "classify",  "order": 5, "factory": C005_BackMatter},
+    {"id": "C-003", "phase": "classify",  "order": 6, "factory": C003_TitlePage},
 
     {"id": "N-004", "phase": "normalize", "order": 1, "factory": N004_QuoteNormalization},
 
