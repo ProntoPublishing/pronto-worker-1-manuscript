@@ -47,8 +47,25 @@ Nothing else changed between 1.0.2 and 1.0.3.
 - **Iter 2 (THIS BRANCH, DONE): `lib/rules/landmarks.py`** — lexicons as config constants,
   whitespace normalization (NBSP), the §2.1 pattern with trailing-title, §2.1b unnumbered
   branch. Pure, NOT wired into classification. Tests use the six run_records' real strings.
-- Iter 3+: stratum detection (§2.2), part-word precedence (§2.3), C-001/C-002 rewire,
-  C-003 redesign (§3), validators (§4), N-005, pStyle synthesis (pending flag ruling).
+- **Iter 3 (DONE, 2026-07-15): Q1/Q2 rulings wired into `lib/rules/landmarks.py`**
+  per the v2.2.1 addendum. `match_landmark()` gains the Q2 fused variant (all three
+  ordinal systems, parse-gated, `fused=True` on the match for the classifier's
+  normalization warning). `match_landmark_lines()` now returns a `LandmarkScan`
+  implementing Q1's two-stage algorithm: whole-text primary; per-line fallback valid
+  only with EXACTLY one matching line (`ambiguous=True` + count on 2+, ruled warning
+  at classification time); non-matching lines returned as `caption_lines` for §2.3
+  routing. Candidate gating stays the classifier's job.
+  **Q1 interpretation note:** the addendum's rationale says `match_landmark_lines()`
+  "wires in as coded", but its normative text adds the exactly-one-line rule and
+  caption routing, which the iter-2 helper lacked. Normative text wins; the helper
+  was extended (return type changed to LandmarkScan). Not treated as an ambiguity —
+  the ruling's behavioral spec is unambiguous.
+  **Pinned edge (test-documented):** a block whose text is two heading lines
+  ("CHAPTER II.\nCHAPTER III.") matches at stage 1 with the second line as trailing
+  title — stage-1 primacy per the ruling; the exactly-one-line rule only governs
+  stage 2. Not a corpus shape.
+- Iter 4+: stratum detection (§2.2), part-word precedence (§2.3), C-001/C-002 rewire,
+  C-003 redesign (§3), validators (§4), N-005, pStyle synthesis (ruled IN by Q3).
 
 ---
 

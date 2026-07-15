@@ -156,35 +156,98 @@ class TestDocumentedInterplay(unittest.TestCase):
         self.assertEqual(m.ordinal, 5)
 
 
-class TestSpecQuestionsQ1Q2(unittest.TestCase):
-    """SPEC QUESTIONS (MIGRATION_NOTES_v1.1.md) — these tests document
-    spec-as-written behavior. They are NOT the desired end state; they
-    pin the ambiguity until the spec rules.
-    """
+class TestQ1TwoStageRuled(unittest.TestCase):
+    """Q1 ruling (v2.2.1 addendum): whole-text first, per-line fallback,
+    exactly-one-line rule, non-matching lines → caption_lines."""
 
     PP_CAPTION_MERGED = "“I hope Mr. Bingley will like it. \n\nCHAPTER II."
 
-    def test_q1_caption_merged_fails_whole_text_per_spec(self):
+    def test_caption_merged_still_fails_whole_text(self):
         # §2.1 whole-text anchor: caption text precedes the chapter word.
         self.assertIsNone(match_landmark(self.PP_CAPTION_MERGED))
 
-    def test_q1_lines_helper_recovers_caption_merged(self):
-        # The candidate resolution (whole-text then per-line): finds it.
-        m = match_landmark_lines(self.PP_CAPTION_MERGED)
+    def test_caption_merged_matches_per_line_with_caption_routing(self):
+        scan = match_landmark_lines(self.PP_CAPTION_MERGED)
+        self.assertFalse(scan.ambiguous)
+        m = scan.match
         self.assertIsNotNone(m)
         self.assertEqual(m.ordinal, 2)
+        self.assertEqual(m.matched_via, "line")
+        self.assertEqual(len(m.caption_lines), 1)
+        self.assertIn("Bingley", m.caption_lines[0])
 
-    def test_q1_lines_helper_still_prefers_whole_text_for_dq(self):
-        m = match_landmark_lines("CHAPTER I.\nWHICH TREATS OF THE CHARACTER")
+    def test_whole_text_still_primary_for_dq(self):
+        scan = match_landmark_lines("CHAPTER I.\nWHICH TREATS OF THE CHARACTER")
+        m = scan.match
         self.assertEqual(m.ordinal, 1)
+        self.assertEqual(m.matched_via, "whole")
         self.assertTrue(m.trailing_title.startswith("WHICH TREATS"))
+        self.assertEqual(m.caption_lines, ())
 
-    def test_q2_fused_heading_fails_per_spec(self):
-        # P&P's "CHAPTERXXVII." — §2.1 requires whitespace after the
-        # section word. Two of P&P's 61 are fused; the 61/61 acceptance
-        # row needs a ruling (no-space variant vs 59/61 + warning).
-        self.assertIsNone(match_landmark("CHAPTERXXVII."))
-        self.assertIsNone(match_landmark_lines("CHAPTERXXVII."))
+    def test_two_matching_lines_is_ambiguous(self):
+        # Leading caption defeats stage 1 (whole-text), so stage 2 runs
+        # and finds two matching lines → ambiguous per the ruling.
+        scan = match_landmark_lines("A caption line\nCHAPTER II.\nCHAPTER III.")
+        self.assertIsNone(scan.match)
+        self.assertTrue(scan.ambiguous)
+        self.assertEqual(scan.matching_line_count, 2)
+
+    def test_whole_text_swallows_adjacent_heading_lines_by_design(self):
+        # Stage-1 primacy (ruling: "keeps DQ's whole-text trailing-title
+        # path primary"): a block that IS two heading lines still matches
+        # whole-text, the second line becoming the trailing title. Not a
+        # corpus shape; pinned so the precedence is explicit.
+        scan = match_landmark_lines("CHAPTER II.\nCHAPTER III.")
+        self.assertEqual(scan.match.ordinal, 2)
+        self.assertEqual(scan.match.trailing_title, "CHAPTER III.")
+
+    def test_no_matching_lines_is_a_clean_miss(self):
+        scan = match_landmark_lines("A caption line\nAnother caption line")
+        self.assertIsNone(scan.match)
+        self.assertFalse(scan.ambiguous)
+        self.assertEqual(scan.matching_line_count, 0)
+
+
+class TestQ2FusedRuled(unittest.TestCase):
+    """Q2 ruling: fused no-space variant, all ordinal systems, flagged
+    fused=True for the classifier's normalization warning."""
+
+    def test_pp_fused_roman(self):
+        for s, expect in (("CHAPTERXXVII.", 27), ("CHAPTERXXVIII.", 28)):
+            with self.subTest(s=s):
+                m = match_landmark(s)
+                self.assertIsNotNone(m, f"fused variant must match {s!r}")
+                self.assertEqual((m.kind, m.ordinal), ("chapter", expect))
+                self.assertTrue(m.fused)
+
+    def test_fused_arabic_and_spelled(self):
+        self.assertEqual(match_landmark("CHAPTER12").ordinal, 12)
+        m = match_landmark("STAVEONE.")
+        self.assertEqual(m.ordinal, 1)
+        self.assertTrue(m.fused)
+
+    def test_fused_part_class(self):
+        m = match_landmark("BOOKII.")
+        self.assertEqual((m.kind, m.ordinal), ("part", 2))
+        self.assertTrue(m.fused)
+
+    def test_fused_rejects_real_words(self):
+        # The parse gate is the guard: remainders that aren't ordinals fail.
+        for s in ("Chapterhouse", "Partition", "Bookend", "ACTION", "Sectional"):
+            with self.subTest(s=s):
+                self.assertIsNone(match_landmark(s), f"false fused match: {s!r}")
+
+    def test_fused_line_inside_caption_merged_block(self):
+        scan = match_landmark_lines("Some caption text\n\nCHAPTERXXVII.")
+        m = scan.match
+        self.assertIsNotNone(m)
+        self.assertEqual(m.ordinal, 27)
+        self.assertTrue(m.fused)
+        self.assertEqual(m.matched_via, "line")
+        self.assertEqual(m.caption_lines, ("Some caption text",))
+
+    def test_spaced_match_is_not_fused(self):
+        self.assertFalse(match_landmark("CHAPTER IV.").fused)
 
 
 if __name__ == "__main__":

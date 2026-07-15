@@ -1,28 +1,44 @@
 """
-Landmark pattern matcher — amendment spec v2.2 §2.1/§2.1b, iteration 2.
+Landmark pattern matcher — amendment spec v2.2 §2.1/§2.1b as patched by
+the v2.2.1 rulings addendum (2026-07-15). Iteration 3.
 
-Pure library code: NOT wired into classification (that is iteration 3+).
-Implements the frozen pattern
+Pure library code: classification wiring is iteration 4+. Implements:
 
-    ^ <section-word> \\s+ <ordinal> [.:—]? (\\s+ <trailing-title>)? $
+  §2.1 (spaced, primary):   ^ <section-word> \\s+ <ordinal> [.:—]? (\\s+ <trailing-title>)? $
+  Q2 ruling (fused variant): ^ <section-word><ordinal> [.:—]? $
+      — no whitespace between word and ordinal, valid for all three
+      ordinal systems, no trailing title. Fires only when the ordinal
+      remainder parses ("Chapterhouse" fails the parse, so real words
+      never match). A fused match carries fused=True so the classifier
+      can emit the ruled normalization warning ("probable missing space
+      in heading"). Candidate-block gating is the CLASSIFIER's job.
+  §2.1b unnumbered:         {Prologue, Epilogue} → chapter_number null
+                            + landmark_subtype.
 
-over whitespace-normalized text, the chapter-class / part-class lexicon
-split (§2.3 gives part-class words precedence at classification time —
-this module only REPORTS the class), and the §2.1b unnumbered branch
-({Prologue, Epilogue} → chapter_number null + landmark_subtype).
+  Q1 ruling (two-stage matching), in match_landmark_lines():
+      (1) whole-normalized-text match (preserves DQ trailing titles);
+      (2) on failure, each line tested independently. Exactly ONE
+          matching line → the block matches via that line, and the
+          non-matching non-empty lines are returned as caption_lines
+          (routed to §2.3 subtitle/caption treatment by the classifier
+          — P&P's 34 caption-merged headings). TWO OR MORE matching
+          lines → ambiguous: no classification, scan.ambiguous=True so
+          the classifier emits the ruled warning.
+      Per the ruling, per-line results are only valid on blocks that
+      are already landmark candidates (dominant stratum / visually
+      gated) — enforced at classification time, not here.
 
-⚠️ SPEC QUESTIONS Q1/Q2 (MIGRATION_NOTES_v1.1.md): `match_landmark()`
-is whole-text per spec — P&P's caption-merged headings ("<caption>
-\\n\\n CHAPTER II.") and fused forms ("CHAPTERXXVII.") do NOT match, in
-tension with §6's "P&P 61/61 preserved". `match_landmark_lines()` is
-the line-wise helper iteration 3 wires IF the spec ruling picks the
-whole-text-then-per-line resolution. Do not wire either until ruled.
+NOTE on "wires in as coded": the addendum's rationale blesses the
+iter-2 helper by name, but its normative text adds the exactly-one-line
+rule and caption routing, which the iter-2 helper lacked. The normative
+text wins; the helper was extended accordingly (see MIGRATION_NOTES
+"Q1 interpretation" entry).
 """
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, Tuple
 
 from .ordinals import parse_ordinal, detect_ordinal_style
 
@@ -34,6 +50,7 @@ __all__ = [
     "match_landmark",
     "match_landmark_lines",
     "LandmarkMatch",
+    "LandmarkScan",
 ]
 
 # Config constants (spec §2.1: "additions are one-line").
@@ -73,6 +90,18 @@ _NUMBERED_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Q2 fused variant: section word immediately followed by the ordinal
+# token, no whitespace, optional trailing punctuation, nothing else.
+# The ordinal group is letters/digits/hyphens only (spelled compounds
+# like TWENTY-SEVEN keep their hyphen); the parse_ordinal gate does the
+# real filtering.
+_FUSED_RE = re.compile(
+    rf"^(?P<word>{_lexicon_alternation(CHAPTER_CLASS_LEXICON + PART_CLASS_LEXICON)})"
+    rf"(?P<ordinal>[A-Za-z0-9\-]+)"
+    rf"[{_TRAILING_PUNCT}]?$",
+    re.IGNORECASE,
+)
+
 _UNNUMBERED_RE = re.compile(
     rf"^(?P<word>{_lexicon_alternation(UNNUMBERED_LEXICON)})"
     rf"(?:[{_TRAILING_PUNCT}])?"
@@ -94,6 +123,12 @@ class LandmarkMatch:
     trailing_title: text after the ordinal on the same normalized line
         (DQ: "WHICH TREATS OF THE CHARACTER…"); None when absent
     landmark_subtype: "prologue" | "epilogue" for the unnumbered branch
+    fused: True when the Q2 no-space variant fired ("CHAPTERXXVII.") —
+        classifier must emit the normalization warning
+    matched_via: "whole" | "line" — which Q1 stage produced the match
+    caption_lines: for matched_via="line", the block's non-matching
+        non-empty normalized lines (§2.3 subtitle/caption routing —
+        P&P's merged captions). Empty tuple otherwise.
     """
     kind: str
     section_word: str
@@ -102,12 +137,40 @@ class LandmarkMatch:
     ordinal_style: Optional[str] = None
     trailing_title: Optional[str] = None
     landmark_subtype: Optional[str] = None
+    fused: bool = False
+    matched_via: str = "whole"
+    caption_lines: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class LandmarkScan:
+    """Result of the Q1 two-stage scan (match_landmark_lines).
+
+    match: the LandmarkMatch, or None when nothing matched or the
+        per-line stage was ambiguous.
+    ambiguous: True when 2+ lines matched at the per-line stage (ruled:
+        no classification + warning).
+    matching_line_count: number of per-line matches (0 when the whole
+        text matched — the per-line stage never ran).
+    """
+    match: Optional[LandmarkMatch]
+    ambiguous: bool = False
+    matching_line_count: int = 0
+
+
+def _classify_word(word: str) -> str:
+    return (
+        "part"
+        if word.lower().rstrip(".") in
+        tuple(w.rstrip(".") for w in PART_CLASS_LEXICON)
+        else "chapter"
+    )
 
 
 def match_landmark(text: str) -> Optional[LandmarkMatch]:
-    """Match the §2.1 pattern against the whitespace-normalized WHOLE
-    text (spec-as-written semantics; see module docstring for the
-    Q1 caveat on caption-merged sources).
+    """Match §2.1 (+ Q2 fused variant, + §2.1b) against the
+    whitespace-normalized WHOLE text. Stage 1 of the Q1 algorithm;
+    also the per-line primitive for stage 2.
     """
     normalized = normalize_ws(text)
     if not normalized:
@@ -116,31 +179,38 @@ def match_landmark(text: str) -> Optional[LandmarkMatch]:
     m = _NUMBERED_RE.match(normalized)
     if m:
         word = m.group("word")
-        ordinal_token = m.group("ordinal")
         # The regex's lazy \S+? plus optional punct group leaves clean
         # tokens; strip any residual trailing punctuation defensively.
-        ordinal_token = ordinal_token.rstrip(_TRAILING_PUNCT)
+        ordinal_token = m.group("ordinal").rstrip(_TRAILING_PUNCT)
         value = parse_ordinal(ordinal_token)
         if value is not None:
-            kind = (
-                "part"
-                if word.lower().rstrip(".") in
-                tuple(w.rstrip(".") for w in PART_CLASS_LEXICON)
-                else "chapter"
-            )
             title = m.group("title")
             return LandmarkMatch(
-                kind=kind,
+                kind=_classify_word(word),
                 section_word=word,
                 ordinal=value,
                 ordinal_display=ordinal_token,
                 ordinal_style=detect_ordinal_style(ordinal_token),
                 trailing_title=title.strip() if title else None,
             )
-        # Ordinal token didn't parse ("Chapter the First", "BOOK I."
-        # parses fine but "Chapter Once" doesn't) → not a numbered
-        # landmark; fall through to the unnumbered branch (it won't
-        # match either unless the word is Prologue/Epilogue).
+        # Ordinal token didn't parse ("Chapter Once") → not a numbered
+        # landmark; fall through to fused / unnumbered.
+
+    f = _FUSED_RE.match(normalized)
+    if f:
+        word = f.group("word")
+        ordinal_token = f.group("ordinal")
+        value = parse_ordinal(ordinal_token)
+        if value is not None:
+            return LandmarkMatch(
+                kind=_classify_word(word),
+                section_word=word,
+                ordinal=value,
+                ordinal_display=ordinal_token,
+                ordinal_style=detect_ordinal_style(ordinal_token),
+                fused=True,
+            )
+        # Remainder isn't an ordinal ("Chapterhouse") → not fused.
 
     u = _UNNUMBERED_RE.match(normalized)
     if u:
@@ -155,19 +225,55 @@ def match_landmark(text: str) -> Optional[LandmarkMatch]:
     return None
 
 
-def match_landmark_lines(text: str) -> Optional[LandmarkMatch]:
-    """Q1 helper (NOT wired anywhere): whole-text first, then per-line.
+def match_landmark_lines(text: str) -> LandmarkScan:
+    """Q1 ruling: whole-text first, per-line fallback with the
+    exactly-one-line rule.
 
-    Whole-text preserves DQ's trailing-title extraction; the per-line
-    fallback catches P&P's caption-merged shape where the chapter line
-    sits after caption text. Awaiting the spec ruling — iteration 3
-    wires exactly one of match_landmark / match_landmark_lines.
+    Stage 1 — whole normalized text (preserves DQ trailing-title
+    extraction). Stage 2 — each line independently; exactly one
+    matching line classifies the block via that line, with the
+    remaining non-empty lines as caption_lines (§2.3 routing); two or
+    more matching lines → ambiguous (no match + classifier warning).
+
+    Candidate gating (dominant stratum / visual gates) is enforced by
+    the caller — per the ruling, per-line matching only ever runs
+    inside candidate blocks.
     """
     whole = match_landmark(text)
     if whole is not None:
-        return whole
-    for line in (text or "").splitlines():
-        line_match = match_landmark(line)
-        if line_match is not None:
-            return line_match
-    return None
+        return LandmarkScan(match=whole)
+
+    line_hits = []   # (LandmarkMatch, normalized_line)
+    others = []      # non-matching non-empty normalized lines
+    for raw_line in (text or "").splitlines():
+        norm_line = normalize_ws(raw_line)
+        if not norm_line:
+            continue
+        lm = match_landmark(norm_line)
+        if lm is not None:
+            line_hits.append((lm, norm_line))
+        else:
+            others.append(norm_line)
+
+    if len(line_hits) == 1:
+        lm, _ = line_hits[0]
+        return LandmarkScan(
+            match=LandmarkMatch(
+                kind=lm.kind,
+                section_word=lm.section_word,
+                ordinal=lm.ordinal,
+                ordinal_display=lm.ordinal_display,
+                ordinal_style=lm.ordinal_style,
+                trailing_title=lm.trailing_title,
+                landmark_subtype=lm.landmark_subtype,
+                fused=lm.fused,
+                matched_via="line",
+                caption_lines=tuple(others),
+            ),
+            matching_line_count=1,
+        )
+    if len(line_hits) >= 2:
+        return LandmarkScan(
+            match=None, ambiguous=True, matching_line_count=len(line_hits),
+        )
+    return LandmarkScan(match=None)
