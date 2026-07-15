@@ -757,19 +757,24 @@ class Test_V002_HeadingStyleConsistency(BaseFixtureTest):
 
 
 class Test_V003_SpaceLossHeuristic(BaseFixtureTest):
+    """V-003 v2 is OBSERVATIONAL (amendment spec §4): findings live in
+    ctx.extras['v003_observations'], never ctx.warnings."""
 
-    def test_positive_joined_words_flagged(self):
+    def test_positive_joined_words_observed_not_warned(self):
         path = self._fixture("v003_joined_words.docx")
         ctx, exc = _process_fixture(path)
         self.assertIsNone(exc)
-        v003 = [w for w in ctx.warnings if w.get("rule") == "V-003"]
-        flagged_tokens = {w["detail"] for w in v003}
+        self.assertEqual(
+            [w for w in ctx.warnings if w.get("rule") == "V-003"], [],
+            "V-003 must not write ctx.warnings after the §4 demotion")
+        obs = ctx.extras.get("v003_observations", [])
+        flagged_tokens = {o["detail"] for o in obs}
         # Must catch at least one of "Theweather" / "thefirst" (both are
         # function-word-led and fail the dictionary check).
         self.assertTrue(
-            any("Theweather" in t or "theweather" in t.lower() for t in flagged_tokens)
+            any("theweather" in t.lower() for t in flagged_tokens)
             or any("thefirst" in t.lower() for t in flagged_tokens),
-            f"V-003 did not flag expected function-word-led joins; got: {flagged_tokens}"
+            f"V-003 did not observe expected function-word-led joins; got: {flagged_tokens}"
         )
 
     def test_negative_legitimate_compounds_not_flagged(self):
@@ -780,6 +785,7 @@ class Test_V003_SpaceLossHeuristic(BaseFixtureTest):
         path = self._fixture("v003_legitimate_compounds.docx")
         ctx, exc = _process_fixture(path)
         self.assertIsNone(exc)
+        self.assertEqual(ctx.extras.get("v003_observations", []), [])
         v003 = [w for w in ctx.warnings if w.get("rule") == "V-003"]
         self.assertEqual(v003, [],
                          f"V-003 false-positive: {[w['detail'] for w in v003]}")

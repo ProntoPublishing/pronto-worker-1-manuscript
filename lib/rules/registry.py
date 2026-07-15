@@ -33,6 +33,7 @@ from .validation import (
     V002_HeadingStyleConsistency,
     V003_SpaceLossHeuristic,
     V004_TrackedChangesResidueDetector,
+    V005_ZeroStructure,
 )
 from .human import H001_AuthorTitlePageVsIntake
 
@@ -67,6 +68,7 @@ RULE_REGISTRY: List[Dict[str, object]] = [
     {"id": "V-002", "phase": "validate",  "order": 2, "factory": V002_HeadingStyleConsistency},
     {"id": "V-003", "phase": "validate",  "order": 3, "factory": V003_SpaceLossHeuristic},
     {"id": "V-004", "phase": "validate",  "order": 4, "factory": V004_TrackedChangesResidueDetector},
+    {"id": "V-005", "phase": "validate",  "order": 5, "factory": V005_ZeroStructure},
 
     {"id": "H-001", "phase": "emit",      "order": 1, "factory": H001_AuthorTitlePageVsIntake},
 ]

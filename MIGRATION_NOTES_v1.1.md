@@ -102,8 +102,17 @@ Nothing else changed between 1.0.2 and 1.0.3.
   **Q3 mechanism attribution:** every member notes "qualified via: <signals>";
   summary at ctx.extras["c003_mechanism"] = "tag path" | "position/shape path".
   Classify order now: C-001, C-002, C-006, C-004, C-005, C-003.
-- Iter 6+: validators (§4), N-005, pStyle synthesis (ruled IN by Q3), rules_version
-  bump to 1.1.
+- **Iter 6 (DONE, 2026-07-15): §4 validators.** V-001 v2: part-scoped continuity
+  with the implicit first part (DQ Amendment 2), unnumbered landmarks excluded;
+  warning detail names the scope. V-005 (NEW, provisional id — next free validator
+  slot, confirm at Doc 22 v1.1 drafting): zero structural roles AND blocks>50 AND
+  words>5,000 → medium warning. V-003 v2: observational — findings to module logger
+  + ctx.extras["v003_observations"], never ctx.warnings, so they're out of the
+  artifact and the Airtable Warning Count (= len(warnings)) automatically. **Demotion
+  side-decision:** a missing wordfreq backend is now a log line + extras note, NOT a
+  rule_fault (an observational rule shouldn't pollute Rule Fault Count); flagging
+  here since Doc 22 v1.0.1 specified the fault.
+- Iter 7+: N-005, pStyle synthesis (ruled IN by Q3), rules_version bump to 1.1.
 
 ---
 

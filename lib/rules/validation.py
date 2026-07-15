@@ -5,10 +5,13 @@ Per Doc 22 §Layer 3: flag but do not fix. Each rule emits entries into
 ctx.warnings[]; blocks are not mutated.
 """
 from __future__ import annotations
+import logging
 import re
 from typing import Dict, List, Any, Optional, Tuple
 
 from .base import RuleContext
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -30,43 +33,67 @@ def _chapter_headings(blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 class V001_ChapterNumberContinuity:
-    """V-001 v1: flag when chapter_numbers are not monotonically
-    increasing by 1 in document order.
+    """V-001 v2 (amendment spec §2.4/§4): part-scoped chapter-number
+    continuity with the implicit first part.
 
-    Only chapter_number values that are ints are considered. A null
-    chapter_number (from an unextractable or unnumbered chapter) is
-    skipped — it's the unknown-exit case, not a gap.
+    Sequences are scoped to the enclosing part_divider: numbering
+    restarts per part (Frankenstein I–VII ×3 volumes; DQ I–LII then
+    I–LXXIV). The span before the first part_divider is an implicit
+    first part (DQ Amendment 2 — DQ has "Volume II" but no "Volume I"
+    marker). Within a scope, integer chapter_numbers must increase
+    monotonically by 1 from the first observed value.
+
+    Exclusions: unnumbered landmarks (§2.1b — chapter_number null /
+    landmark_subtype set) never enter sequence math; non-int
+    chapter_number is the unknown-exit case, not a gap.
     """
 
     id = "V-001"
     phase = "validate"
     order = 1
-    version = "v1"
+    version = "v2"
 
     def run(self, ctx: RuleContext) -> None:
-        numbered = [
-            (b.get("id"), b["chapter_number"])
-            for b in _chapter_headings(ctx.blocks)
-            if isinstance(b.get("chapter_number"), int)
-        ]
-        if len(numbered) < 2:
-            return
+        scopes = self._scoped_chapters(ctx.blocks)
+        for scope_label, numbered in scopes:
+            if len(numbered) < 2:
+                continue
+            observed = [n for _, n in numbered]
+            expected = list(range(observed[0], observed[0] + len(observed)))
+            if observed == expected:
+                continue
+            detail = _first_gap_detail(observed)
+            ctx.warnings.append({
+                "rule": "V-001",
+                "severity": "medium",
+                "detail": (
+                    f"[{scope_label}] chapter numbers {observed} — {detail}"
+                ),
+                "blocks": [bid for bid, _ in numbered],
+            })
 
-        observed = [n for _, n in numbered]
-        expected_ascending = list(range(numbered[0][1], numbered[0][1] + len(numbered)))
-        if observed == expected_ascending:
-            return
-
-        # Find the first gap or out-of-order position for a readable detail.
-        detail = _first_gap_detail(observed)
-        ctx.warnings.append({
-            "rule": "V-001",
-            "severity": "medium",
-            "detail": (
-                f"chapter numbers {observed} — {detail}"
-            ),
-            "blocks": [bid for bid, _ in numbered],
-        })
+    @staticmethod
+    def _scoped_chapters(blocks):
+        """[(scope_label, [(block_id, chapter_number), ...]), ...] in
+        document order; scope 0 is the implicit first part."""
+        scopes = [("implicit first part", [])]
+        for b in blocks:
+            role = b.get("role")
+            if role == "part_divider":
+                label = (
+                    b.get("part_title")
+                    or (f"part {b.get('part_number')}"
+                        if b.get("part_number") is not None else None)
+                    or b.get("id") or "unnamed part"
+                )
+                scopes.append((str(label), []))
+            elif role == "chapter_heading":
+                if b.get("landmark_subtype"):
+                    continue  # §2.1b unnumbered — excluded from sequence math
+                n = b.get("chapter_number")
+                if isinstance(n, int):
+                    scopes[-1][1].append((b.get("id"), n))
+        return scopes
 
 
 def _first_gap_detail(observed: List[int]) -> str:
@@ -157,7 +184,16 @@ _ASCII_WORD_RE = re.compile(r"^[A-Za-z]+(?:[-'][A-Za-z]+)*$")
 
 
 class V003_SpaceLossHeuristic:
-    """V-003 v1: heuristic (a) only — function-word prefix + dictionary miss.
+    """V-003 v2: DEMOTED TO OBSERVATIONAL (amendment spec §4).
+
+    Corpus tally ~499 FP / 0 TP / 2 FN (and the 2 FNs are now caught as
+    landmarks by the Q2 fused variant). Findings go to the module
+    logger and ctx.extras["v003_observations"] — NEVER ctx.warnings —
+    so they stay out of the artifact warnings[] and the Airtable
+    Warning Count (= len(warnings)). Revisit v1.2.
+
+    Mechanics unchanged below: heuristic (a) only — function-word
+    prefix + dictionary miss.
 
     For each body_paragraph block's text, tokenize on whitespace. For
     each token:
@@ -179,7 +215,7 @@ class V003_SpaceLossHeuristic:
     id = "V-003"
     phase = "validate"
     order = 3
-    version = "v1"
+    version = "v2"
 
     def __init__(self):
         # Lazy import so the module is usable in test environments
@@ -193,18 +229,15 @@ class V003_SpaceLossHeuristic:
             self._backend = None
 
     def run(self, ctx: RuleContext) -> None:
+        observations = ctx.extras.setdefault("v003_observations", [])
         if self._word_frequency is None:
-            # No dictionary backend — record as a rule fault and skip.
-            ctx.rule_faults.append({
-                "rule": "V-003",
-                "phase": "validate",
-                "fault_class": "MissingDependency",
-                "message": (
-                    "wordfreq not installed; V-003 cannot run without a "
-                    "dictionary backend. Install `wordfreq` per "
-                    "requirements.txt."
-                ),
-            })
+            # Observational rule: a missing backend is a log line, not
+            # a rule fault (demotion note in the class docstring).
+            logger.warning(
+                "V-003 skipped: wordfreq not installed (observational "
+                "rule; no fault recorded)"
+            )
+            ctx.extras["v003_skipped"] = "wordfreq not installed"
             return
 
         for block in ctx.blocks:
@@ -213,7 +246,15 @@ class V003_SpaceLossHeuristic:
             text = _block_text(block)
             if not text:
                 continue
-            self._scan(block, text, ctx.warnings)
+            self._scan(block, text, observations)
+
+        if observations:
+            logger.info(
+                "V-003 (observational): %d possible missing-space "
+                "token(s); first: %s",
+                len(observations),
+                observations[0].get("detail"),
+            )
 
     def _scan(
         self,
@@ -276,6 +317,49 @@ _REVISION_LITERAL_MARKERS = ("<w:ins", "<w:del", "</w:ins>", "</w:del>")
 # Unicode insertion/deletion indicators (U+2040, U+2041) + a few common
 # "proofing" chars that indicate unresolved revision marks.
 _REVISION_UNICODE_CHARS = ("\u2040", "\u2041", "\u2380")
+
+
+class V005_ZeroStructure:
+    """V-005 v1 (amendment spec §4, new): warn when a substantial
+    document produced no structural roles at all.
+
+    Fires when: zero blocks with role in {chapter_heading, part_divider}
+    AND block_count > 50 AND word_count > 5,000. Warning, not fault —
+    a 100%-body book is legal (and the classifier may be right), but an
+    operator should look.
+
+    Rule id V-005 is provisional (next free validator id); confirm at
+    Doc 22 v1.1 drafting.
+    """
+
+    id = "V-005"
+    phase = "validate"
+    order = 5
+    version = "v1"
+
+    _STRUCTURAL_ROLES = {"chapter_heading", "part_divider"}
+    _MIN_BLOCKS = 50
+    _MIN_WORDS = 5_000
+
+    def run(self, ctx: RuleContext) -> None:
+        if any(b.get("role") in self._STRUCTURAL_ROLES for b in ctx.blocks):
+            return
+        if len(ctx.blocks) <= self._MIN_BLOCKS:
+            return
+        word_count = sum(
+            len(_block_text(b).split()) for b in ctx.blocks
+        )
+        if word_count <= self._MIN_WORDS:
+            return
+        ctx.warnings.append({
+            "rule": "V-005",
+            "severity": "medium",
+            "detail": (
+                f"zero structural roles across {len(ctx.blocks)} blocks / "
+                f"~{word_count} words — no chapter_heading or part_divider "
+                f"classified; verify the manuscript truly has no structure"
+            ),
+        })
 
 
 class V004_TrackedChangesResidueDetector:
