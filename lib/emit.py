@@ -1,5 +1,10 @@
 """
-Emit a manuscript.v2.0 artifact from a RuleContext.
+Emit a manuscript.v2.1 artifact from a RuleContext.
+
+Schema 2.1 = the amendment minor bump (spec v2.2 §2.3): role enum grows
+chapter_subtitle; blocks may carry landmark_subtype. W2 must ship the §5
+prerequisite (accept 2.1 + fail-safe default handler) before or with
+this worker version.
 
 Also exposes the Operational Policy versioned storage-key helper per I-8
 (key-and-artifact agreement).
@@ -12,7 +17,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from uuid import uuid4
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "2.1"
 
 
 def build_artifact(

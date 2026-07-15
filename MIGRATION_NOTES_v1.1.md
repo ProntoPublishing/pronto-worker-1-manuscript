@@ -64,8 +64,30 @@ Nothing else changed between 1.0.2 and 1.0.3.
   ("CHAPTER II.\nCHAPTER III.") matches at stage 1 with the second line as trailing
   title — stage-1 primacy per the ruling; the exactly-one-line rule only governs
   stage 2. Not a corpus shape.
-- Iter 4+: stratum detection (§2.2), part-word precedence (§2.3), C-001/C-002 rewire,
-  C-003 redesign (§3), validators (§4), N-005, pStyle synthesis (ruled IN by Q3).
+- **Iter 4 (DONE, 2026-07-15): stratum detection + C-001/C-002 v2 + schema v2.1.**
+  `lib/rules/strata.py`: strata = heading levels + the visually gated short-paragraph
+  stratum (short + centered + bold/large_font; SHORT_TEXT_MAX=120 config constant —
+  spec gives the gate shape, not the number). Dominant stratum = max chapter-class
+  match count, ties by earliest first match. **Documented simplification:** spec §2.2
+  says "most members forming a coherent numbered sequence"; on all six books plain
+  count picks the same stratum — revisit if a tie/incoherent cluster appears.
+  `C001_LandmarkClassification` (v2): Q1 two-stage scan per candidate; part-class →
+  part_divider in ANY stratum (§2.3 precedence); chapter-class only in dominant
+  stratum (catch-all dead); §2.1b unnumbered (dominant stratum or visual gates);
+  Q2 fused → "probable missing space" warning; Q1 ambiguous → warning + unclassified.
+  Merged captions: heading keeps its full text (faithful carry — W2 1.3.1 already
+  renders the caption line); caption count recorded in classification_notes.
+  `C002_StructuralPartDetection` (v2): repeated-book-title shape above the dominant
+  stratum (Frankenstein's 3 volume pages) → part_divider, part_number null.
+  **Schema v2.1 pulled forward from iter 8** (v2.0 has additionalProperties:false —
+  landmark_subtype needs the bump now): `manuscript/manuscript.v2.1.schema.json`
+  (role enum + chapter_subtitle, landmark_subtype field, schema_version enum "2.1"),
+  emit.py SCHEMA_VERSION="2.1", fixture harness validates against 2.1. Matches the
+  W2 prereq branch (`feature/w2-schema-2.1-prereq`, accepts "2.1").
+  Note: v1.0.2 fixture suite passed unchanged except the storage-key version segment
+  and an import — the amendment preserves the catch-all's true positives by design.
+- Iter 5+: chapter_subtitle role assignment (§2.3 below-stratum), C-003 redesign (§3),
+  validators (§4), N-005, pStyle synthesis (ruled IN by Q3), rules_version bump.
 
 ---
 

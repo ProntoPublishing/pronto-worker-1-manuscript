@@ -1,38 +1,28 @@
 """
 Layer 2 classification rules — C-001 through C-005.
 
-Per Doc 22 v1.0.1 §Layer 2 and §Execution Phase Ordering. All classifiers
-honor I-10 (non-overwrite): a classifier skips any block that already
-carries a non-null role assigned by an earlier-ordered classifier. That
-invariant is what keeps C-003 (title_page, order 5) from clobbering
-chapter_heading / part_divider / front_matter / back_matter assignments,
-and what keeps C-005's back-matter pattern library from re-labeling a
-part_divider titled "Resources."
+C-001/C-002 are the Doc 22 v1.1 amendment cores (spec v2.2 + v2.2.1
+rulings, iteration 4): pattern + dominant-stratum landmark
+classification replaces the absolute-heading-level matching and the
+H2→chapter_heading catch-all (~400 false chapters across the corpus).
+C-004/C-005 remain Doc 22 v1.0.1. All classifiers honor I-10
+(non-overwrite): a classifier skips any block that already carries a
+non-null role assigned by an earlier-ordered classifier.
 
-Classifiers extract role-specific fields where the v2.0 schema supports
-them: chapter_number/chapter_title (C-001), part_number/part_title/
-force_page_break (C-002), subtype (C-004, C-005). C-003's title/subtitle/
-author extraction has no schema-supported home yet — see iter-3 schema gap
-note at the bottom of this file.
+Classifiers extract role-specific fields where the schema supports
+them: chapter_number/chapter_title/landmark_subtype (C-001),
+part_number/part_title/force_page_break (C-001 part branch, C-002),
+subtype (C-004, C-005). C-003 writes ctx.manuscript_meta.
 """
 from __future__ import annotations
 import re
 from typing import Dict, List, Any, Optional, Set
 
 from .base import RuleContext
+from .landmarks import LandmarkMatch, match_landmark_lines, normalize_ws
+from .strata import analyze_strata, is_visually_gated
 
 
-# Patterns from Doc 22 v1.0.1. DOTALL so the `.+` capturing a title can
-# span embedded newlines — the Long Quiet style of "Chapter 1\nTitle" is
-# the motivating case.
-_C001_CHAPTER = re.compile(
-    r"^(Chapter|Ch\.?|CHAPTER)\s+([\w\d]+)(?:[\s\n:.]+(.+))?",
-    re.IGNORECASE | re.DOTALL,
-)
-_C002_PART = re.compile(
-    r"^(Part|Book|Section)\s+([\w\d]+)[\s\n:.]+(.+)",
-    re.IGNORECASE | re.DOTALL,
-)
 _C004_FRONT = re.compile(
     r"^(a\s+)?(note|preface|foreword|introduction|dedication|epigraph|prologue|to\s+the\s+reader).*",
     re.IGNORECASE | re.DOTALL,
@@ -60,111 +50,211 @@ def _has_role(block: Dict[str, Any]) -> bool:
     return r is not None and r != ""
 
 
-def _parse_number(raw: str) -> Any:
-    """Parse a chapter/part number: int if numeric, otherwise the raw
-    string. Caller may choose to treat a non-numeric value as null.
-    """
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return raw  # "One", "III", etc. — keep verbatim.
-
-
 # ---------------------------------------------------------------------------
-# C-001: Chapter heading detection
+# C-001: Landmark classification (Doc 22 v1.1 core — spec v2.2 §2.1–§2.3)
 # ---------------------------------------------------------------------------
 
-class C001_ChapterHeading:
-    """C-001 v1 (with v1.0.1 Patch 3 regex): classify heading-level-2 blocks
-    as role=chapter_heading, extracting chapter_number and chapter_title.
+class C001_LandmarkClassification:
+    """C-001 v2: pattern + dominant-stratum landmark classification.
 
-    Per-block behavior (per Doc 22 v1.0.1 C-001):
-      - Apply the pattern to the block text.
-      - If the pattern matches and the title group is present: role=
-        chapter_heading, chapter_number=<parsed group 2>, chapter_title=
-        <trimmed group 3>.
-      - If the pattern matches but the title group is absent (number-only
-        heading, e.g., "Chapter 5"): synthesize chapter_title="Chapter <N>"
-        and add a classification_notes[] entry.
-      - If the pattern fails but the block is heading-level-2: role=
-        chapter_heading, chapter_number=null, chapter_title=<full text>,
-        classification_notes[]=["chapter_number not extractable"].
-      - Blocks with an existing non-null role are skipped (I-10).
+    Replaces the v1 absolute-H2 matcher AND the H2 catch-all. Behavior
+    (spec v2.2 §2.1/§2.1b/§2.2/§2.3 + v2.2.1 rulings Q1/Q2):
+
+      1. §2.2 — run stratum analysis (each heading level + the visually
+         gated short-paragraph stratum); the dominant landmark stratum
+         is where chapter-class landmarks live. Analysis is cached at
+         ctx.extras["strata"] for C-002 and validators.
+      2. Per candidate block, the Q1 two-stage scan (whole-text first,
+         per-line fallback, exactly-one-line rule).
+      3. Part-class match → part_divider in ANY stratum, precedence
+         over chapter_heading (§2.3 / DQ Amendment 1).
+      4. Chapter-class match → chapter_heading ONLY inside the dominant
+         stratum (the catch-all is dead; chapter-shaped text elsewhere
+         falls through to C-004/C-005/terminal default).
+      5. §2.1b unnumbered ({Prologue, Epilogue}) → chapter_heading with
+         chapter_number null + landmark_subtype, valid in the dominant
+         stratum or under the visual gates.
+      6. Q2 fused matches emit the ruled normalization warning; Q1
+         ambiguous scans (2+ matching lines) emit a warning and leave
+         the block unclassified.
+
+    Unmatched blocks are NOT defaulted here — generic `heading` role
+    arrives via the terminal default; front/back matter via C-004/C-005.
     """
 
     id = "C-001"
     phase = "classify"
     order = 1
-    version = "v1"
+    version = "v2"
 
     def run(self, ctx: RuleContext) -> None:
-        for block in ctx.blocks:
+        analysis = analyze_strata(ctx.blocks)
+        ctx.extras["strata"] = analysis
+
+        for pos, block in enumerate(ctx.blocks):
             if _has_role(block):
                 continue
-            if block.get("type") != "heading" or block.get("heading_level") != 2:
+            bid = block.get("id") or f"__pos_{pos}"
+            key = analysis.strata_of.get(bid)
+            if key is None:
+                continue  # not a landmark-candidate carrier
+            scan = analysis.scans.get(bid)
+            if scan is None:
+                continue
+            in_dominant = (
+                analysis.dominant is not None and key == analysis.dominant
+            )
+
+            if scan.ambiguous:
+                if in_dominant:
+                    ctx.warnings.append({
+                        "rule": "C-001",
+                        "severity": "medium",
+                        "detail": (
+                            f"ambiguous landmark block: "
+                            f"{scan.matching_line_count} lines match the "
+                            f"landmark pattern (Q1 exactly-one-line rule) — "
+                            f"left unclassified"
+                        ),
+                        "block_id": block.get("id"),
+                    })
                 continue
 
-            text = _block_text(block).strip()
-            m = _C001_CHAPTER.match(text)
+            m = scan.match
+            if m is None:
+                continue
 
-            if m:
-                num_raw = m.group(2)
-                title_raw = m.group(3)
-                number = _parse_number(num_raw)
-                block["role"] = "chapter_heading"
-                if title_raw:
-                    block["chapter_number"] = number
-                    block["chapter_title"] = title_raw.strip()
-                else:
-                    # Number-only: synthesize the title.
-                    block["chapter_number"] = number
-                    block["chapter_title"] = f"Chapter {num_raw}"
-                    _add_note(block,
-                        f"chapter_title synthesized from number-only heading")
-            else:
-                # Fallback: heading-level-2 without a recognizable pattern.
-                block["role"] = "chapter_heading"
-                block["chapter_number"] = None
-                block["chapter_title"] = text if text else "Untitled"
-                _add_note(block, "chapter_number not extractable")
+            if m.kind == "part":
+                # §2.3: part-class words win in ANY stratum.
+                self._assign_part(ctx, block, m)
+            elif m.kind == "chapter":
+                if not in_dominant:
+                    continue  # catch-all is dead — no absolute-level promotion
+                self._assign_chapter(ctx, block, m)
+            elif m.kind == "unnumbered":
+                # §2.1b: dominant stratum or visual gates.
+                if in_dominant or is_visually_gated(block):
+                    self._assign_unnumbered(ctx, block, m)
+
+    # -- assignment helpers -------------------------------------------------
+
+    def _assign_part(
+        self, ctx: RuleContext, block: Dict[str, Any], m: LandmarkMatch,
+    ) -> None:
+        block["role"] = "part_divider"
+        block["part_number"] = m.ordinal
+        block["part_title"] = (
+            m.trailing_title
+            or f"{m.section_word.title()} {m.ordinal_display}"
+        )
+        block["force_page_break"] = True
+        self._common_notes(ctx, block, m)
+
+    def _assign_chapter(
+        self, ctx: RuleContext, block: Dict[str, Any], m: LandmarkMatch,
+    ) -> None:
+        block["role"] = "chapter_heading"
+        block["chapter_number"] = m.ordinal
+        if m.trailing_title:
+            block["chapter_title"] = m.trailing_title
+        else:
+            block["chapter_title"] = (
+                f"{m.section_word.title()} {m.ordinal_display}"
+            )
+            _add_note(block, "chapter_title synthesized from number-only heading")
+        self._common_notes(ctx, block, m)
+
+    def _assign_unnumbered(
+        self, ctx: RuleContext, block: Dict[str, Any], m: LandmarkMatch,
+    ) -> None:
+        block["role"] = "chapter_heading"
+        block["chapter_number"] = None
+        block["landmark_subtype"] = m.landmark_subtype
+        text = normalize_ws(_block_text(block))
+        block["chapter_title"] = m.trailing_title or text or "Untitled"
+        _add_note(block, f"unnumbered landmark (§2.1b): {m.landmark_subtype}")
+        self._common_notes(ctx, block, m)
+
+    def _common_notes(
+        self, ctx: RuleContext, block: Dict[str, Any], m: LandmarkMatch,
+    ) -> None:
+        if m.matched_via == "line":
+            _add_note(
+                block,
+                f"matched per-line (Q1 fallback); {len(m.caption_lines)} "
+                f"caption line(s) carried in block text for §2.3 treatment",
+            )
+        if m.ordinal_style:
+            _add_note(block, f"ordinal style: {m.ordinal_style}")
+        if m.fused:
+            _add_note(block, "fused heading matched via Q2 no-space variant")
+            ctx.warnings.append({
+                "rule": "C-001",
+                "severity": "low",
+                "detail": (
+                    f"probable missing space in heading: "
+                    f"'{m.section_word}{m.ordinal_display}'"
+                ),
+                "block_id": block.get("id"),
+            })
 
 
 # ---------------------------------------------------------------------------
-# C-002: Part divider detection
+# C-002: Structural part detection (Doc 22 v1.1 — spec §2.3 above-stratum)
 # ---------------------------------------------------------------------------
 
-class C002_PartDivider:
-    """C-002 v1: classify heading-level-1 blocks whose text matches the
-    Part/Book/Section pattern as role=part_divider.
+class C002_StructuralPartDetection:
+    """C-002 v2: the repeated-book-title shape above the landmark stratum.
 
-    Emits part_number, part_title, and force_page_break=true per I-5.
-    Skips blocks with an existing non-null role (I-10). Unmatched
-    heading-level-1 blocks are left for C-004 / C-005 to consider.
+    Pattern-matching part-words are C-001 v2's job (any stratum). What
+    remains for C-002 is Frankenstein's shape: identical heading blocks
+    repeated in a stratum ABOVE the dominant landmark stratum (its three
+    volume title pages) → part_divider with a null part_number.
+
+    Only fires when the dominant stratum is a heading stratum (a
+    paragraph-stratum book has no "above"). Skips role-carrying blocks
+    (I-10).
     """
 
     id = "C-002"
     phase = "classify"
     order = 2
-    version = "v1"
+    version = "v2"
 
     def run(self, ctx: RuleContext) -> None:
-        for block in ctx.blocks:
-            if _has_role(block):
-                continue
-            if block.get("type") != "heading" or block.get("heading_level") != 1:
-                continue
+        analysis = ctx.extras.get("strata")
+        if analysis is None or analysis.dominant is None:
+            return
+        if analysis.dominant[0] != "heading":
+            return
+        dom_level = analysis.dominant[1]
 
-            text = _block_text(block).strip()
-            m = _C002_PART.match(text)
-            if not m:
-                continue
+        # Candidate population: unclassified heading blocks strictly
+        # above (numerically lower level than) the dominant stratum.
+        candidates: List[Dict[str, Any]] = [
+            b for b in ctx.blocks
+            if not _has_role(b)
+            and b.get("type") == "heading"
+            and (b.get("heading_level") or 0) < dom_level
+        ]
+        if len(candidates) < 2:
+            return
 
-            num_raw = m.group(2)
-            title_raw = (m.group(3) or "").strip()
-            block["role"] = "part_divider"
-            block["part_number"] = _parse_number(num_raw)
-            block["part_title"] = title_raw
-            block["force_page_break"] = True
+        from collections import Counter
+        texts = Counter(normalize_ws(_block_text(b)) for b in candidates)
+
+        for b in candidates:
+            norm = normalize_ws(_block_text(b))
+            if norm and texts[norm] >= 2:
+                b["role"] = "part_divider"
+                b["part_number"] = None
+                b["part_title"] = norm
+                b["force_page_break"] = True
+                _add_note(
+                    b,
+                    f"repeated-book-title shape (§2.3): identical heading "
+                    f"×{texts[norm]} above the landmark stratum",
+                )
 
 
 # ---------------------------------------------------------------------------
