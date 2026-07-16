@@ -114,6 +114,13 @@ def analyze_strata(blocks: List[Dict[str, Any]]) -> StrataAnalysis:
     strata_of: Dict[str, Tuple] = {}
 
     for pos, block in enumerate(blocks):
+        # I-10 extension (rules 1.2): blocks already claimed by an
+        # earlier classifier — C-007's source-TOC blocks are the
+        # motivating case — neither vote for a stratum nor carry
+        # landmarks. Before C-007 existed nothing had a role at
+        # analysis time, so this is a no-op for the 1.1 corpus.
+        if block.get("role"):
+            continue
         key = stratum_key(block)
         if key is None:
             continue

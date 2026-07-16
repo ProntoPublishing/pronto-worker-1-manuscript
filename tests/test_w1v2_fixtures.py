@@ -38,8 +38,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = REPO_ROOT / "tests" / "fixtures" / "v1"
 SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.1.schema.json"
 
-WORKER_VERSION = "5.1.0"  # released 2026-07-16
-RULES_VERSION = "1.1"
+WORKER_VERSION = "5.2.0-a1"  # rules-1.2 pre-release
+RULES_VERSION = "1.2"
 
 
 def _schema_validator():
@@ -159,7 +159,7 @@ class Test_R001_UnsupportedFormat(BaseFixtureTest):
         )
         self.assertEqual(
             key,
-            "services/TALLY-8F3Q/INTFMT/manuscript/v2.1/w5.1.0-r1.1/manuscript.json",
+            "services/TALLY-8F3Q/INTFMT/manuscript/v2.1/w5.2.0-a1-r1.2/manuscript.json",
         )
 
 
