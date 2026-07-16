@@ -2,8 +2,25 @@
 
 **Status: implemented per the Gate 2 rulings (Jesse + Manus + Claude);
 this changelog stands in for a spec amendment doc (v2.3) — the changes
-extend §2.2's machinery rather than amend its text. FOR MANUS REVIEW:
-the four PROPOSED THRESHOLDS below and the two judgment calls.**
+extend §2.2's machinery rather than amend its text.**
+
+**MANUS RULINGS (2026-07-16, same day): all four flagged items GREEN,
+no code changes.** 80-char whole-paragraph cap RATIFIED as-is;
+≥50-word dispersion + ≥3 adjacency-cluster suppression RATIFIED as-is;
+`structural`/`source_toc` via the schema-2.1 enum (no schema bump)
+BLESSED; C-004 yielding the unrecognized document-head H1 BLESSED.
+
+**Training-wheels exit (V-006 medium → info, then cut 5.2.0):** 5
+consecutive V-006 books approved from Review with zero corrections,
+≥2 of them real customer submissions (corpus/dogfood count toward 5,
+not toward the 2). "Approved without correction" = Review→Complete
+with the PDF shipping exactly as built; any landmark change,
+re-render, or structure-prompted resubmission resets the counter and
+buys a corpus fixture (synthetic reproduction for customer files —
+never the manuscript). **SCOPE: exit applies ONLY to V-006. V-005
+(true zero structure) gates to Review PERMANENTLY — the product
+floor.** Streak log lives in the corpus `_Test_Ledger.md` §"V-006
+streak".
 
 Worker 5.2.0-a1 / rules 1.2 / schema **unchanged at 2.1**.
 Trigger: test 21 / corpus Book 16 — a Pandoc plain-text Frankenstein
