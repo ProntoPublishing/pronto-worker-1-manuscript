@@ -74,8 +74,12 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.2.0-a1"   # SemVer 2.0 pre-release. Bump to "5.2.0" when
+WORKER_VERSION = "5.2.1-a1"   # SemVer 2.0 pre-release. Bump to "5.2.1" when
                               # the training wheels come off (V-006 -> info).
+                              # (5.2.1: extractor records manual page breaks
+                              # as force_page_break on the following content
+                              # block — V-007 tripwire plumbing, no rules
+                              # change.)
 RULES_VERSION = "1.2"         # Doc 22 version this worker implements
                               # (v1.2 = Gate 2 rulings Q1/Q3: pattern-only
                               # landmark promotion in zero-structure docs
