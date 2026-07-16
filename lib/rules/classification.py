@@ -19,8 +19,20 @@ import re
 from typing import Dict, List, Any, Optional, Set
 
 from .base import RuleContext
-from .landmarks import LandmarkMatch, match_landmark_lines, normalize_ws
+from .landmarks import (
+    CHAPTER_CLASS_LEXICON,
+    PART_CLASS_LEXICON,
+    LandmarkMatch,
+    match_landmark,
+    match_landmark_lines,
+    normalize_ws,
+)
+from .ordinals import parse_ordinal
 from .strata import analyze_strata, is_visually_gated
+
+# Marker note for blocks promoted by the rules-1.2 pattern-only path.
+# V-006 (validation) scans for this exact prefix — keep them in sync.
+PATTERN_ONLY_NOTE = "promoted via pattern-only path"
 
 
 _C004_FRONT = re.compile(
@@ -450,6 +462,13 @@ class C004_FrontMatter:
         if cutoff_idx is None:
             return
 
+        # The document's first content block, for the head-H1 guard.
+        first_content_idx = next(
+            (i for i, b in enumerate(ctx.blocks)
+             if normalize_ws(_block_text(b))),
+            None,
+        )
+
         for i in range(cutoff_idx):
             block = ctx.blocks[i]
             if _has_role(block):
@@ -465,6 +484,19 @@ class C004_FrontMatter:
                 block["subtype"] = subtype
                 block["title"] = text  # role-specific field; kept for downstream.
             else:
+                # Rules 1.2 guard (Book 16 regression): an UNRECOGNIZED
+                # H1 that is the document's very first content block is
+                # far more plausibly the book title than front matter —
+                # leave it for C-003 (title-page detection, order 8).
+                # Recognized labels above still classify normally, and
+                # non-head generic H1s keep the I-6 fallback.
+                if i == first_content_idx:
+                    _add_note(
+                        block,
+                        "document-head H1 with unrecognized label left "
+                        "for title-page detection (C-003; rules 1.2)",
+                    )
+                    continue
                 block["role"] = "front_matter"
                 block["subtype"] = "generic"
                 block["title"] = text
@@ -730,6 +762,424 @@ class C003_TitlePage:
             if parse_ordinal(text.rstrip(".")) is None:
                 return "author_or_byline"
         return "subtitle"
+
+
+# ---------------------------------------------------------------------------
+# C-007: Source-TOC detection (rules 1.2, Gate 2 ruling Q3)
+# ---------------------------------------------------------------------------
+
+# Inline-entry scanner for shape (a): landmark-pattern instances INSIDE
+# one block's text ("Letter 1 Letter 2 … Chapter 24" as a single
+# paragraph — Book 16's b_000007).
+_INLINE_ENTRY_RE = re.compile(
+    r"\b(?P<word>"
+    + "|".join(re.escape(w) for w in sorted(
+        CHAPTER_CLASS_LEXICON + PART_CLASS_LEXICON, key=len, reverse=True))
+    + r")\s+(?P<ordinal>[A-Za-z0-9\-]+)",
+    re.IGNORECASE,
+)
+
+_TOC_LABEL_RE = re.compile(r"^(table\s+of\s+)?contents[.:]?$", re.IGNORECASE)
+
+
+class C007_SourceTocDetection:
+    """C-007 v1 (rules 1.2, ruling Q3): detect the SOURCE's own table
+    of contents and suppress it from body output without deleting it.
+
+    Two shapes (both from Book 16/17 evidence):
+      (a) a single block containing multiple landmark-pattern entries
+          and almost nothing else;
+      (b) a run of consecutive short paragraphs, each wholly matching a
+          landmark pattern, with no intervening body text.
+    Both must sit early in the document (_EARLY_BLOCKS window).
+
+    Detected blocks get role="structural" + subtype="source_toc" —
+    schema 2.1's enum already carries "structural", and W2's structural
+    handler renders non-page-break/non-rule structural blocks as a
+    traceability comment, so the blocks are suppressed from the
+    rendered book but preserved in the artifact for audit. (Recorded in
+    MIGRATION_NOTES_v1.2: the ruling offered "source_toc role or
+    suppressed flag"; role=structural+subtype gets the same semantics
+    with no schema bump and no W2 change.) An adjacent-above
+    "Contents" / "Table of Contents" label block joins the detection.
+
+    Parsed entries are stored at ctx.extras["source_toc_entries"] as
+    (word, ordinal) tuples — C-008 uses them as CORROBORATION for
+    pattern-only promotion (never a prerequisite, per ruling Q1).
+
+    Runs FIRST in the classify phase so detected blocks are off the
+    table before stratum analysis and every other classifier.
+    Rule id C-007 is provisional; confirm at Doc 22 v1.2 drafting.
+    """
+
+    id = "C-007"
+    phase = "classify"
+    order = 1
+    version = "v1"
+
+    _EARLY_BLOCKS = 80        # detection window: first N blocks
+    _MIN_ENTRIES = 3          # fewer pattern instances is not a TOC
+    _MAX_RESIDUE_FRACTION = 0.2   # shape (a): non-entry alnum content cap
+    _RUN_ENTRY_MAX_CHARS = 80     # shape (b): entry paragraphs are short
+
+    def run(self, ctx: RuleContext) -> None:
+        entries: List[tuple] = []
+        window = min(self._EARLY_BLOCKS, len(ctx.blocks))
+
+        # ---- shape (a): multi-entry single block --------------------
+        for i in range(window):
+            b = ctx.blocks[i]
+            if _has_role(b) or b.get("type") not in ("paragraph", "heading"):
+                continue
+            text = normalize_ws(_block_text(b))
+            if not text:
+                continue
+            found = self._inline_entries(text)
+            if found is None:
+                continue
+            self._mark(b, f"shape (a): {len(found)} inline entries")
+            self._mark_label_above(ctx.blocks, i)
+            entries.extend(found)
+
+        # ---- shape (b): consecutive pure-label paragraphs -----------
+        # Entries are PARAGRAPH blocks whose entire text is a bare
+        # landmark label ("Letter 3", "Chapter 12" — NO trailing
+        # title): a body paragraph that merely BEGINS with a label
+        # ("Chapter one body.") whole-matches the landmark pattern via
+        # its trailing-title branch and must not count, and
+        # heading-typed label runs are real structure (C-001/C-002
+        # territory), not a source TOC. The run's ordinals must also
+        # be non-decreasing — source TOCs list in order.
+        run: List[int] = []
+        run_entries: List[tuple] = []
+
+        def close_run():
+            nonlocal run, run_entries
+            ordered = all(
+                run_entries[k][1] >= run_entries[k - 1][1]
+                or run_entries[k][0] != run_entries[k - 1][0]
+                for k in range(1, len(run_entries))
+            )
+            if len(run) >= self._MIN_ENTRIES and ordered:
+                for j in run:
+                    self._mark(
+                        ctx.blocks[j],
+                        f"shape (b): run of {len(run)} consecutive entries",
+                    )
+                self._mark_label_above(ctx.blocks, run[0])
+                entries.extend(run_entries)
+            run, run_entries = [], []
+
+        for i in range(window):
+            b = ctx.blocks[i]
+            tags = b.get("style_tags") or []
+            text = normalize_ws(_block_text(b))
+            if not text or "empty_line" in tags:
+                continue  # blank spacers neither extend nor break a run
+            if (
+                not _has_role(b)
+                and b.get("type") == "paragraph"
+                and len(text) <= self._RUN_ENTRY_MAX_CHARS
+                and (m := match_landmark(text)) is not None
+                and m.kind in ("chapter", "part")
+                and m.trailing_title is None
+                and m.ordinal is not None
+            ):
+                run.append(i)
+                run_entries.append((m.section_word.lower(), m.ordinal))
+            else:
+                close_run()
+        close_run()
+
+        if entries:
+            ctx.extras["source_toc_entries"] = entries
+
+    # -- helpers ------------------------------------------------------------
+
+    def _inline_entries(self, text: str) -> Optional[List[tuple]]:
+        """Return the parsed (word, ordinal) entries when the text is a
+        shape-(a) source TOC; None otherwise. The residue rule is
+        load-bearing: prose that merely MENTIONS several landmarks
+        ("chapter 1 and chapter 2 …") keeps most of its characters
+        outside the matches and is rejected."""
+        found: List[tuple] = []
+        matched_chars = 0
+        for m in _INLINE_ENTRY_RE.finditer(text):
+            value = parse_ordinal(m.group("ordinal").rstrip(".:—"))
+            if value is None:
+                continue
+            found.append((m.group("word").lower(), value))
+            matched_chars += m.end() - m.start()
+        if len(found) < self._MIN_ENTRIES:
+            return None
+        total_alnum = sum(1 for ch in text if ch.isalnum())
+        # Residue = alnum characters outside matched spans.
+        outside = []
+        last = 0
+        for m in _INLINE_ENTRY_RE.finditer(text):
+            outside.append(text[last:m.start()])
+            last = m.end()
+        outside.append(text[last:])
+        residue = sum(1 for ch in "".join(outside) if ch.isalnum())
+        if total_alnum and residue / total_alnum > self._MAX_RESIDUE_FRACTION:
+            return None
+        return found
+
+    def _mark(self, block: Dict[str, Any], how: str) -> None:
+        block["role"] = "structural"
+        block["subtype"] = "source_toc"
+        _add_note(
+            block,
+            f"source TOC detected ({how}; rules 1.2 Q3) — suppressed "
+            f"from body output; W2 renders its generated TOC. Block "
+            f"retained for audit and promotion corroboration.",
+        )
+
+    def _mark_label_above(self, blocks: List[Dict[str, Any]], i: int) -> None:
+        """A short 'Contents' label directly above the detected TOC
+        (empty_line spacers skipped) is part of the source TOC
+        apparatus — suppress it the same way."""
+        for j in range(i - 1, -1, -1):
+            b = blocks[j]
+            text = normalize_ws(_block_text(b))
+            tags = b.get("style_tags") or []
+            if not text or "empty_line" in tags:
+                continue
+            if not _has_role(b) and _TOC_LABEL_RE.match(text):
+                self._mark(b, "adjacent 'Contents' label")
+            return
+
+
+# ---------------------------------------------------------------------------
+# C-008: Pattern-only landmark promotion (rules 1.2, Gate 2 ruling Q1)
+# ---------------------------------------------------------------------------
+
+class C008_PatternOnlyLandmarks:
+    """C-008 v1 (rules 1.2, ruling Q1): promote pattern-matching
+    paragraphs to landmarks in ZERO-STRUCTURE documents — where the
+    §2.2 machinery found nothing to work with (no heading stratum with
+    chapter matches, no visually gated paragraphs). Book 16 (test 21's
+    Pandoc plain-text Frankenstein) is the defining fixture.
+
+    All four ruling requirements gate the promotion:
+      1. Coherent sequence PER LEXICON CLASS ("letter" and "chapter"
+         are separate sequences): ordinals strictly increasing within
+         a class; a restart is permitted only where a part-class
+         candidate intervenes between the two positions.
+      2. Whole-paragraph: the block's entire normalized text is a
+         single pattern instance, capped at _MAX_CHARS. Mid-prose
+         mentions ("as I said in Chapter 1, …") fail the whole-text
+         anchor by construction.
+      3. Multiplicity: >= _MIN_CLASS_RUN matches in the class sequence.
+      4. Dispersion: consecutive candidates must be separated by
+         >= _DISPERSION_MIN_WORDS of intervening content. An ADJACENT
+         cluster of >= _MIN_CLASS_RUN matches is a source-TOC candidate
+         (handed the C-007 treatment as a belt — C-007 normally catches
+         it first) and never a landmark run; clustered candidates are
+         excluded from promotion either way.
+
+    A source TOC is CORROBORATION only (ctx.extras entries recorded in
+    the block notes when they agree) — promotion must succeed without
+    one (Book 16 has none in shape-(b) form). Promotion emits no
+    warning here; V-006 (validate phase) fires on the marker note so
+    the finished book routes through the Review gate (training wheels,
+    Gate 2 ruling: medium until a few real books pass review clean).
+
+    Thresholds are PROPOSALS pending Manus review (MIGRATION_NOTES_v1.2):
+    _MAX_CHARS=80 (longest corpus landmark line "CHAPTER TWENTY-THREE."
+    is 21 chars; 80 leaves room for modest trailing titles while
+    excluding prose sentences), _DISPERSION_MIN_WORDS=50 (the shortest
+    plausible real chapter body dwarfs it; a TOC run has ~0-5 words
+    between entries), _MIN_CLASS_RUN=3 (ruling text).
+    Rule id C-008 is provisional; confirm at Doc 22 v1.2 drafting.
+    """
+
+    id = "C-008"
+    phase = "classify"
+    order = 3
+    version = "v1"
+
+    _MAX_CHARS = 80
+    _MIN_CLASS_RUN = 3
+    _DISPERSION_MIN_WORDS = 50
+
+    def run(self, ctx: RuleContext) -> None:
+        analysis = ctx.extras.get("strata")
+        if analysis is not None and analysis.dominant is not None:
+            return  # the visual-gate path found landmarks — stay off
+        if any(
+            b.get("role") in ("chapter_heading", "part_divider")
+            for b in ctx.blocks
+        ):
+            return
+
+        # Requirement 2: whole-paragraph single-pattern candidates.
+        cands: List[tuple] = []  # (block_index, LandmarkMatch)
+        for i, b in enumerate(ctx.blocks):
+            if _has_role(b) or b.get("type") not in ("paragraph", "heading"):
+                continue
+            text = normalize_ws(_block_text(b))
+            if not text or len(text) > self._MAX_CHARS:
+                continue
+            m = match_landmark(text)
+            if m is None or m.kind == "unnumbered" or m.ordinal is None:
+                continue
+            cands.append((i, m))
+        if not cands:
+            return
+
+        # Requirement 4: dispersion. Split the candidate list into
+        # adjacency clusters; a cluster (mutually < threshold apart) is
+        # never a landmark run.
+        def words_between(a: int, b: int) -> int:
+            return sum(
+                len(_block_text(ctx.blocks[j]).split())
+                for j in range(a + 1, b)
+            )
+
+        groups: List[List[int]] = [[0]]
+        for k in range(1, len(cands)):
+            if words_between(cands[k - 1][0], cands[k][0]) < self._DISPERSION_MIN_WORDS:
+                groups[-1].append(k)
+            else:
+                groups.append([k])
+
+        promotable: List[tuple] = []
+        for g in groups:
+            if len(g) == 1:
+                promotable.append(cands[g[0]])
+                continue
+            # Adjacent cluster: source-TOC candidate, never landmarks.
+            if len(g) >= self._MIN_CLASS_RUN:
+                for k in g:
+                    i, m = cands[k]
+                    b = ctx.blocks[i]
+                    b["role"] = "structural"
+                    b["subtype"] = "source_toc"
+                    _add_note(
+                        b,
+                        f"adjacent cluster of {len(g)} pattern matches "
+                        f"(dispersion < {self._DISPERSION_MIN_WORDS} words; "
+                        f"rules 1.2 Q1 req 4) — source-TOC candidate, "
+                        f"suppressed from body output",
+                    )
+            else:
+                for k in g:
+                    _add_note(
+                        ctx.blocks[cands[k][0]],
+                        f"pattern match excluded from pattern-only "
+                        f"promotion: adjacent to another match "
+                        f"(dispersion < {self._DISPERSION_MIN_WORDS} words) "
+                        f"but below source-TOC multiplicity",
+                    )
+
+        if not promotable:
+            return
+
+        # Requirement 1: per-class coherent sequences, part-pivot
+        # restarts. Class key = section word, normalized.
+        part_positions = [
+            i for i, m in promotable if m.kind == "part"
+        ]
+        by_class: Dict[str, List[tuple]] = {}
+        for i, m in promotable:
+            if m.kind != "chapter":
+                continue
+            by_class.setdefault(
+                m.section_word.lower().rstrip("."), []
+            ).append((i, m))
+
+        toc_entries = ctx.extras.get("source_toc_entries") or []
+        toc_set = {(w, o) for (w, o) in toc_entries}
+
+        promoted_any = False
+        used_pivots: Set[int] = set()
+        c001 = C001_LandmarkClassification()
+        for cls, items in sorted(by_class.items()):
+            if len(items) < self._MIN_CLASS_RUN:
+                for i, _m in items:
+                    _add_note(
+                        ctx.blocks[i],
+                        f"pattern-only class '{cls}' below multiplicity "
+                        f"({len(items)} < {self._MIN_CLASS_RUN}) — not promoted",
+                    )
+                continue
+            ok, pivots = self._sequence_coherent(items, part_positions)
+            if not ok:
+                for i, _m in items:
+                    _add_note(
+                        ctx.blocks[i],
+                        f"pattern-only class '{cls}' sequence incoherent — "
+                        f"not promoted",
+                    )
+                continue
+            used_pivots.update(pivots)
+            corroborated = sum(
+                1 for _i, m in items
+                if (m.section_word.lower().rstrip("."), m.ordinal) in toc_set
+            )
+            for i, m in items:
+                block = ctx.blocks[i]
+                c001._assign_chapter(ctx, block, m)
+                _add_note(
+                    block,
+                    f"{PATTERN_ONLY_NOTE} (rules 1.2 Q1): class '{cls}', "
+                    f"no visual confirmation"
+                    + (
+                        f"; source TOC corroborates {corroborated}/{len(items)}"
+                        if toc_entries else ""
+                    ),
+                )
+            promoted_any = True
+
+        # Part candidates: promote when their class meets multiplicity
+        # +sequence on its own, or when they served as a restart pivot
+        # for a promoted chapter class.
+        if promoted_any or part_positions:
+            parts_by_class: Dict[str, List[tuple]] = {}
+            for i, m in promotable:
+                if m.kind == "part":
+                    parts_by_class.setdefault(
+                        m.section_word.lower().rstrip("."), []
+                    ).append((i, m))
+            for cls, items in sorted(parts_by_class.items()):
+                standalone = (
+                    len(items) >= self._MIN_CLASS_RUN
+                    and self._sequence_coherent(items, [])[0]
+                )
+                for i, m in items:
+                    if standalone or (i in used_pivots and promoted_any):
+                        block = ctx.blocks[i]
+                        c001._assign_part(ctx, block, m)
+                        _add_note(
+                            block,
+                            f"{PATTERN_ONLY_NOTE} (rules 1.2 Q1): part class "
+                            f"'{cls}', "
+                            + ("standalone sequence" if standalone
+                               else "restart pivot for a promoted chapter class"),
+                        )
+                        promoted_any = True
+
+    def _sequence_coherent(
+        self, items: List[tuple], part_positions: List[int],
+    ) -> tuple:
+        """Requirement 1: strictly increasing ordinals in document
+        order; a restart (ordinal <= previous) is allowed only when a
+        part-class candidate sits between the two blocks. Returns
+        (coherent, pivot_positions_used)."""
+        pivots: Set[int] = set()
+        prev_pos: Optional[int] = None
+        prev_ord: Optional[int] = None
+        for i, m in items:
+            if prev_ord is not None and m.ordinal <= prev_ord:
+                pivot = next(
+                    (p for p in part_positions if prev_pos < p < i), None,
+                )
+                if pivot is None:
+                    return False, set()
+                pivots.add(pivot)
+            prev_pos, prev_ord = i, m.ordinal
+        return True, pivots
 
 
 # ---------------------------------------------------------------------------

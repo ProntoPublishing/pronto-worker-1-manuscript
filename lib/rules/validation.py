@@ -383,6 +383,57 @@ class V005_ZeroStructure:
         })
 
 
+class V006_PatternOnlyPromotion:
+    """V-006 v1 (rules 1.2, Gate 2 ruling Q1): warn when landmarks were
+    promoted by the pattern-only path — no visual confirmation backed
+    them.
+
+    TRAINING WHEELS: severity medium initially, so the finished book
+    routes through the same Review gate as V-005 (W2 1.6.0 pre-wired
+    the rule id). Downgrade to "info" once a few real books pass review
+    clean — a one-line change here, zero machinery elsewhere.
+
+    Detection is by C-008's marker note on promoted blocks (shared
+    prefix constant PATTERN_ONLY_NOTE) so the validator also works when
+    re-run over a loaded artifact, not just in-pipeline.
+    Rule id V-006 is provisional; confirm at Doc 22 v1.2 drafting.
+    """
+
+    id = "V-006"
+    phase = "validate"
+    order = 6
+    version = "v1"
+
+    def run(self, ctx: RuleContext) -> None:
+        from .classification import PATTERN_ONLY_NOTE
+        promoted = [
+            b for b in ctx.blocks
+            if b.get("role") in ("chapter_heading", "part_divider")
+            and any(
+                PATTERN_ONLY_NOTE in n
+                for n in (b.get("classification_notes") or [])
+            )
+        ]
+        if not promoted:
+            return
+        classes = sorted({
+            n.split("class '")[1].split("'")[0]
+            for b in promoted
+            for n in (b.get("classification_notes") or [])
+            if PATTERN_ONLY_NOTE in n and "class '" in n
+        })
+        ctx.warnings.append({
+            "rule": "V-006",
+            "severity": "medium",
+            "detail": (
+                f"landmarks promoted by pattern-only path — no visual "
+                f"confirmation: {len(promoted)} landmark(s) across "
+                f"{len(classes)} class(es) {classes}; hold for review "
+                f"(training wheels)"
+            ),
+        })
+
+
 class V004_TrackedChangesResidueDetector:
     """V-004 v1: scan every block for surviving tracked-change markers.
 
