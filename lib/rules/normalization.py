@@ -158,6 +158,95 @@ class N003_StripZeroWidthAndLayoutHacks:
 
 
 # ---------------------------------------------------------------------------
+# N-005: Strip external-source license boilerplate (Doc 22 v1.0.3)
+# ---------------------------------------------------------------------------
+
+# Canonical license patterns, frozen for v1 (Doc 22 v1.0.3 N-005).
+_N005_PATTERNS = tuple(re.compile(p, re.IGNORECASE) for p in (
+    r"^the project gutenberg ebook",
+    r"^\*\*\* ?start of (the |this )?project gutenberg ebook",
+    r"^\*\*\* ?end of (the |this )?project gutenberg ebook",
+    r"^section \d+\. (information|general|title)",
+    r"^this ebook is for the use of",
+    r"^updated editions will replace",
+))
+
+
+def _n005_matches(text: str) -> bool:
+    t = (text or "").strip()
+    return bool(t) and any(p.match(t) for p in _N005_PATTERNS)
+
+
+class N005_StripLicenseBoilerplate:
+    """N-005 v1 (Doc 22 v1.0.3): strip external-source license
+    boilerplate. Layer 1a with the documented summary-entry hybrid —
+    emits ONE applied_rules[] entry {rule, version, count} when blocks
+    were removed.
+
+    Behavior (canon): walk blocks in document order. A block matching a
+    canonical license pattern:
+      - heading → remove it, then walk forward removing every
+        subsequent block UNTIL the next heading-level-1 or -2 whose
+        text does NOT match any license pattern (or end of document).
+        License headings encountered along the way are removed and the
+        walk continues (the negation guard — Gutenberg variants embed
+        multiple license-section headings inside the boilerplate body).
+      - paragraph → remove only that block.
+    """
+
+    id = "N-005"
+    phase = "strip"
+    order = 3
+    version = "v1"
+
+    def run(self, ctx: RuleContext) -> None:
+        blocks = ctx.blocks
+        remove: set = set()
+        i = 0
+        while i < len(blocks):
+            if i in remove:
+                i += 1
+                continue
+            b = blocks[i]
+            text = _get_block_text(b)
+            if not _n005_matches(text):
+                i += 1
+                continue
+            if b.get("type") == "heading":
+                remove.add(i)
+                j = i + 1
+                while j < len(blocks):
+                    nb = blocks[j]
+                    if (
+                        nb.get("type") == "heading"
+                        and (nb.get("heading_level") in (1, 2))
+                        and not _n005_matches(_get_block_text(nb))
+                    ):
+                        break  # kept — boilerplate range ends here
+                    remove.add(j)
+                    j += 1
+                i = j
+            else:
+                remove.add(i)
+                i += 1
+
+        if not remove:
+            return
+        ctx.blocks[:] = [b for k, b in enumerate(blocks) if k not in remove]
+        ctx.applied_rules.append({
+            "rule": "N-005",
+            "version": "v1",
+            "count": len(remove),
+        })
+
+
+def _get_block_text(block: Dict[str, Any]) -> str:
+    if "spans" in block:
+        return "".join(s.get("text", "") for s in block["spans"])
+    return block.get("text", "") or ""
+
+
+# ---------------------------------------------------------------------------
 # N-004: Quote normalization (straight → curly)
 # ---------------------------------------------------------------------------
 
