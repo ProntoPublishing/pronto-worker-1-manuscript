@@ -74,7 +74,7 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.1.0-a1"   # SemVer 2.0 pre-release. Bump to "5.1.0" on release.
+WORKER_VERSION = "5.1.0"      # Released 2026-07-16 (s6 acceptance 36/36 + test 20 parity).
 RULES_VERSION = "1.1"         # Doc 22 version this worker implements
                               # (v1.1 = classification amendment, spec v2.2
                               # + v2.2.1 rulings; ships the v1.0.3 extractor
