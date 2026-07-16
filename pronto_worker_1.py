@@ -74,12 +74,16 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.2.1-a1"   # SemVer 2.0 pre-release. Bump to "5.2.1" when
-                              # the training wheels come off (V-006 -> info).
+WORKER_VERSION = "5.3.0-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
+                              # final when the V-006 training wheels come
+                              # off (medium -> info).
                               # (5.2.1: extractor records manual page breaks
-                              # as force_page_break on the following content
-                              # block — V-007 tripwire plumbing, no rules
-                              # change.)
+                              # as force_page_break — V-007 tripwire
+                              # plumbing. 5.3.0: footnote ingestion from
+                              # footnotes.xml — anchors get superscript
+                              # markers, note bodies become type=footnote
+                              # blocks after the anchor. Extraction only;
+                              # rules stay 1.2.)
 RULES_VERSION = "1.2"         # Doc 22 version this worker implements
                               # (v1.2 = Gate 2 rulings Q1/Q3: pattern-only
                               # landmark promotion in zero-structure docs
