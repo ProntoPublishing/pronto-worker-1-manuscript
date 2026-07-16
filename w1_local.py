@@ -23,7 +23,7 @@ from lib.rules.base import RuleContext, PHASES
 from lib.rules.rejection import RuleRejectException
 from lib.emit import build_artifact, compute_source_hash
 
-WORKER_VERSION = "5.2.0-a1"   # matches the rules-1.2 branch
+WORKER_VERSION = "5.2.1-a1"   # matches deployed main (rules 1.2 + break observation)
 RULES_VERSION = "1.2"
 
 

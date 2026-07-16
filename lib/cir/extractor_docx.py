@@ -94,10 +94,38 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
     dominant_half_points = body_sizes.get("median_half_points")
 
     # --- Main walk.
+    # Manual-page-break observation (tripwire plumbing, 2026-07-16): a
+    # paragraph consisting solely of a page-break run (Word Insert →
+    # Page Break; python-docx add_page_break) produces NO page_break
+    # block — _split_on_inline_page_breaks collapses it to one empty
+    # segment and the break was silently lost. Rather than emit a new
+    # block (which would shift block indices through C-003's contiguity
+    # arithmetic), record the observation on the first CONTENT block
+    # that follows the break as force_page_break: true — already legal
+    # on any block per manuscript.v2.1 schema (I-5 uses it on
+    # part_divider). W1 classification never reads it; W2 renders it
+    # only on part_divider (unchanged) and reads it in the V-007 title-
+    # cluster gate check. Same treatment for w:pPr/w:pageBreakBefore.
+    pending_break = False
     for element in body:
         tag = _local_tag(element.tag)
         if tag == "p":
-            _emit_paragraph(element, blocks, ids, dominant_half_points)
+            if _paragraph_page_break_before(element):
+                pending_break = True
+            n_before = len(blocks)
+            disposition = _emit_paragraph(
+                element, blocks, ids, dominant_half_points
+            )
+            if disposition == "self":
+                # Swallowed inline break preceding this paragraph's own
+                # content — the break lands on this paragraph's block.
+                pending_break = True
+            if pending_break and _mark_first_content_block(blocks, n_before):
+                pending_break = False
+            if disposition == "next":
+                # Lone-break paragraph, or break after this paragraph's
+                # content: the next content block starts the new page.
+                pending_break = True
         elif tag == "tbl":
             # Placeholder — real table extraction lands in a later iteration.
             blocks.append(make_block(
@@ -105,6 +133,9 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
                 type="table",
                 source={"note": "table placeholder; structured extraction deferred"},
             ))
+            if pending_break:
+                blocks[-1]["force_page_break"] = True
+                pending_break = False
         elif tag == "sectPr":
             continue
         # Anything else (bookmarkStart etc.) — ignore at this layer.
@@ -133,7 +164,7 @@ def _emit_paragraph(
     blocks: List[Dict[str, Any]],
     ids: BlockIdGenerator,
     dominant_half_points: Optional[int],
-) -> None:
+) -> Optional[str]:
     """Translate a w:p element to one or more CIR blocks.
 
     A single w:p may produce:
@@ -141,6 +172,16 @@ def _emit_paragraph(
       - Multiple blocks when an inline page break splits the paragraph.
       - A single empty paragraph (type=paragraph, style_tag=empty_line)
         when the paragraph has no textual content.
+
+    Returns the swallowed-break disposition for the caller's manual-
+    page-break observation pass:
+      - "self": an inline break preceded this paragraph's own content
+        (the break belongs on this paragraph's block).
+      - "next": the paragraph carried a page break but emitted no
+        page_break block and no content after it (lone-break paragraph,
+        or trailing break) — the break belongs on the NEXT content block.
+      - None: no swallowed break (none present, or the multi-segment
+        path already emitted explicit page_break blocks).
     """
     p_style = _paragraph_style(p_elem)
     alignment = _paragraph_alignment(p_elem)
@@ -164,13 +205,14 @@ def _emit_paragraph(
                 blocks, ids,
                 source_paragraph_id=src_id,
             )
-        return
+        return None
 
     _emit_paragraph_segment(
         segments[0] if segments else [],
         p_style, alignment, dominant_half_points,
         blocks, ids,
     )
+    return _swallowed_break_disposition(p_elem)
 
 
 def _emit_paragraph_segment(
@@ -421,6 +463,68 @@ def _run_contains_page_break(r_elem: ET.Element) -> bool:
     for br in r_elem.findall("w:br", NS):
         if (br.get(f"{{{W}}}type") or "").lower() == "page":
             return True
+    return False
+
+
+def _paragraph_page_break_before(p_elem: ET.Element) -> bool:
+    """True when the paragraph carries w:pPr/w:pageBreakBefore (the
+    Format → Paragraph → "Page break before" property — Hatch-style
+    manual chapter breaks). An explicit false/0 val negates it."""
+    el = p_elem.find("w:pPr/w:pageBreakBefore", NS)
+    if el is None:
+        return False
+    val = (el.get(f"{{{W}}}val") or "").lower()
+    return val not in ("false", "0", "none")
+
+
+def _swallowed_break_disposition(p_elem: ET.Element) -> Optional[str]:
+    """For a paragraph that produced a SINGLE segment, classify any
+    inline page-break run the splitter swallowed (see the lone-break
+    trace in extract_docx): "self" when the break precedes the
+    paragraph's first text run, "next" when the paragraph has no text
+    or the break follows it, None when no break is present. Only
+    top-level w:r children are checked for breaks, matching
+    _split_on_inline_page_breaks.
+    """
+    first_break: Optional[int] = None
+    first_text: Optional[int] = None
+    for pos, child in enumerate(list(p_elem)):
+        tag = _local_tag(child.tag)
+        if tag == "r":
+            if first_break is None and _run_contains_page_break(child):
+                first_break = pos
+            if first_text is None and _run_text(child):
+                first_text = pos
+        elif tag in ("hyperlink", "ins"):
+            if first_text is None and any(
+                _run_text(r) for r in child.findall("w:r", NS)
+            ):
+                first_text = pos
+    if first_break is None:
+        return None
+    if first_text is not None and first_break < first_text:
+        return "self"
+    return "next"
+
+
+def _mark_first_content_block(
+    blocks: List[Dict[str, Any]], start: int,
+) -> bool:
+    """Set force_page_break: true on the first CONTENT block at or
+    after index `start`. Content = anything except an empty_line
+    paragraph or a page_break block, so the observation survives
+    N-001's empty-line run collapse (which only ever drops empty_line
+    paragraphs). Returns True when a block was marked."""
+    for b in blocks[start:]:
+        if b.get("type") == "page_break":
+            continue
+        if (
+            b.get("type") == "paragraph"
+            and "empty_line" in (b.get("style_tags") or [])
+        ):
+            continue
+        b["force_page_break"] = True
+        return True
     return False
 
 
