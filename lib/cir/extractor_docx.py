@@ -79,6 +79,13 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
             body_sizes = _detect_body_font_size(z)
         except Exception:
             body_sizes = {"median_half_points": None, "median_pt": None}
+        # Footnote ingestion (5.3.0-a1): read word/footnotes.xml when
+        # present. Absence (or malformed XML) degrades to the pre-5.3
+        # behavior — no footnote blocks, never a crash.
+        try:
+            footnotes_xml = z.read("word/footnotes.xml").decode("utf-8")
+        except KeyError:
+            footnotes_xml = None
 
     root = ET.fromstring(doc_xml)
     body = root.find("w:body", NS)
@@ -92,6 +99,10 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
     # style_tag resolution. We scan headings out; the median of non-heading
     # paragraph sizes is the dominant body size.
     dominant_half_points = body_sizes.get("median_half_points")
+
+    # Footnote context (5.3.0-a1): note bodies keyed by w:id, display
+    # numbers assigned by order of first reference in the document walk.
+    fn_ctx = _FootnoteContext.parse(footnotes_xml)
 
     # --- Main walk.
     # Manual-page-break observation (tripwire plumbing, 2026-07-16): a
@@ -114,7 +125,7 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
                 pending_break = True
             n_before = len(blocks)
             disposition = _emit_paragraph(
-                element, blocks, ids, dominant_half_points
+                element, blocks, ids, dominant_half_points, fn_ctx
             )
             if disposition == "self":
                 # Swallowed inline break preceding this paragraph's own
@@ -164,6 +175,7 @@ def _emit_paragraph(
     blocks: List[Dict[str, Any]],
     ids: BlockIdGenerator,
     dominant_half_points: Optional[int],
+    fn_ctx: Optional["_FootnoteContext"] = None,
 ) -> Optional[str]:
     """Translate a w:p element to one or more CIR blocks.
 
@@ -172,6 +184,13 @@ def _emit_paragraph(
       - Multiple blocks when an inline page break splits the paragraph.
       - A single empty paragraph (type=paragraph, style_tag=empty_line)
         when the paragraph has no textual content.
+      - Trailing footnote blocks (5.3.0-a1): one type=footnote block per
+        footnote referenced in this paragraph, emitted immediately after
+        the paragraph's own block(s), with footnote_ref = the anchor
+        block's id (per the schema: "id of the origin paragraph that
+        anchored this footnote"). Document-order placement at the anchor
+        is a PROVISIONAL policy — Gate 3 Q1 decides anchor-position vs
+        chapter-end vs book-end; only the extractor changes if it moves.
 
     Returns the swallowed-break disposition for the caller's manual-
     page-break observation pass:
@@ -204,15 +223,57 @@ def _emit_paragraph(
                 seg, p_style, alignment, dominant_half_points,
                 blocks, ids,
                 source_paragraph_id=src_id,
+                fn_ctx=fn_ctx,
             )
+        _emit_pending_footnotes(blocks, ids, fn_ctx)
         return None
 
     _emit_paragraph_segment(
         segments[0] if segments else [],
         p_style, alignment, dominant_half_points,
         blocks, ids,
+        fn_ctx=fn_ctx,
     )
+    _emit_pending_footnotes(blocks, ids, fn_ctx)
     return _swallowed_break_disposition(p_elem)
+
+
+def _emit_pending_footnotes(
+    blocks: List[Dict[str, Any]],
+    ids: BlockIdGenerator,
+    fn_ctx: Optional["_FootnoteContext"],
+) -> None:
+    """Emit one type=footnote block per footnote referenced by the
+    paragraph just emitted (fn_ctx.pending), anchored to the last
+    content block. Each note is emitted once, on its first reference."""
+    if fn_ctx is None or not fn_ctx.pending:
+        return
+    pending, fn_ctx.pending = fn_ctx.pending, []
+    # Anchor = the most recent block that can carry a footnote_ref
+    # target: the last non-page_break block (the paragraph's own block).
+    anchor_id = None
+    for b in reversed(blocks):
+        if b.get("type") != "page_break":
+            anchor_id = b.get("id")
+            break
+    for number, note_id in pending:
+        if note_id in fn_ctx.emitted:
+            continue  # second reference to the same note: marker only
+        spans = fn_ctx.note_spans(note_id)
+        if not any((s.get("text") or "").strip() for s in spans):
+            continue  # empty/malformed note body — nothing to carry
+        fn_ctx.emitted.add(note_id)
+        # Lead with the display number, superscript — matching how Word
+        # renders the note area (the number lives OUTSIDE the note text,
+        # in the w:footnoteRef marker run we skip).
+        all_spans = [make_span(str(number), ["superscript"]),
+                     make_span(" ", [])] + spans
+        blocks.append(make_block(
+            id=ids.next(),
+            type="footnote",
+            spans=all_spans,
+            footnote_ref=anchor_id,
+        ))
 
 
 def _emit_paragraph_segment(
@@ -224,9 +285,10 @@ def _emit_paragraph_segment(
     ids: BlockIdGenerator,
     *,
     source_paragraph_id: Optional[str] = None,
+    fn_ctx: Optional["_FootnoteContext"] = None,
 ) -> None:
     """Emit one CIR block from a list of w:r elements (a paragraph segment)."""
-    spans = _runs_to_spans(run_elems)
+    spans = _runs_to_spans(run_elems, fn_ctx=fn_ctx)
 
     # Determine style_tags from alignment + per-run dominant styling.
     style_tags: List[str] = []
@@ -528,20 +590,115 @@ def _mark_first_content_block(
     return False
 
 
-def _runs_to_spans(runs: List[ET.Element]) -> List[Dict[str, Any]]:
+def _runs_to_spans(
+    runs: List[ET.Element],
+    fn_ctx: Optional["_FootnoteContext"] = None,
+) -> List[Dict[str, Any]]:
     """Convert a list of w:r elements to CIR spans, preserving inter-run
     whitespace (Extractor Responsibilities — the fix for the space-loss
     bug). Runs with identical marks are NOT collapsed here; later a Layer 1a
     pass can collapse them if desired.
+
+    Footnote anchors (5.3.0-a1): a run containing w:footnoteReference
+    contributes a superscript span with the note's display number
+    (assigned by order of first reference — Word's w:id values are
+    arbitrary, the rendered numbering is sequential) and queues the
+    note body on fn_ctx.pending for the caller to emit after the
+    paragraph. Pre-5.3 these runs contributed nothing (no w:t), which
+    is how 33 markers vanished from Book 11 without a trace. When
+    fn_ctx is None (note bodies themselves, or a doc with no
+    footnotes.xml) the pre-5.3 behavior stands.
     """
     spans: List[Dict[str, Any]] = []
     for r in runs:
+        if fn_ctx is not None:
+            note_id = _run_footnote_reference_id(r)
+            if note_id is not None and note_id in fn_ctx.notes:
+                number = fn_ctx.assign_number(note_id)
+                spans.append(make_span(str(number), ["superscript"]))
+                fn_ctx.pending.append((number, note_id))
+                continue
         text = _run_text(r)
         if not text:
             continue
         marks = _run_marks(r)
         spans.append(make_span(text, marks))
     return spans
+
+
+def _run_footnote_reference_id(r_elem: ET.Element) -> Optional[str]:
+    """The w:id of a w:footnoteReference in this run, or None. (Not to
+    be confused with w:footnoteRef — the note's own self-marker inside
+    footnotes.xml, which we deliberately skip.)"""
+    ref = r_elem.find("w:footnoteReference", NS)
+    if ref is None:
+        return None
+    return ref.get(f"{{{W}}}id")
+
+
+class _FootnoteContext:
+    """State for footnote ingestion across the document walk.
+
+    notes    — w:id → list of the note's w:p elements (content notes
+               only; separator/continuation pseudo-notes are excluded).
+    numbers  — w:id → display number, assigned on first reference.
+    pending  — (number, id) queue for the paragraph being emitted;
+               drained by _emit_pending_footnotes.
+    emitted  — ids whose blocks are already in the stream (a repeated
+               reference renders a marker but not a second body).
+    """
+
+    def __init__(self, notes: Dict[str, List[ET.Element]]):
+        self.notes = notes
+        self.numbers: Dict[str, int] = {}
+        self.pending: List[Tuple[int, str]] = []
+        self.emitted: set = set()
+
+    @classmethod
+    def parse(cls, footnotes_xml: Optional[str]) -> "_FootnoteContext":
+        notes: Dict[str, List[ET.Element]] = {}
+        if footnotes_xml:
+            try:
+                froot = ET.fromstring(footnotes_xml)
+                for fn in froot.findall("w:footnote", NS):
+                    # Separator / continuationSeparator / continuation-
+                    # Notice pseudo-notes carry w:type; content notes don't.
+                    if fn.get(f"{{{W}}}type"):
+                        continue
+                    fid = fn.get(f"{{{W}}}id")
+                    if fid is None:
+                        continue
+                    notes[fid] = fn.findall("w:p", NS)
+            except ET.ParseError:
+                notes = {}
+        return cls(notes)
+
+    def assign_number(self, note_id: str) -> int:
+        if note_id not in self.numbers:
+            self.numbers[note_id] = len(self.numbers) + 1
+        return self.numbers[note_id]
+
+    def note_spans(self, note_id: str) -> List[Dict[str, Any]]:
+        """The note body as CIR spans: every run of every paragraph,
+        w:footnoteRef marker runs skipped (fn_ctx=None — a footnote
+        cannot itself anchor another footnote), paragraphs joined with
+        a single space span."""
+        spans: List[Dict[str, Any]] = []
+        for i, p in enumerate(self.notes.get(note_id) or []):
+            runs: List[ET.Element] = []
+            for child in list(p):
+                tag = _local_tag(child.tag)
+                if tag == "r":
+                    if child.find("w:footnoteRef", NS) is not None:
+                        continue
+                    runs.append(child)
+                elif tag in ("hyperlink", "ins"):
+                    runs.extend(child.findall("w:r", NS))
+            p_spans = _runs_to_spans(runs, fn_ctx=None)
+            if p_spans and spans:
+                spans.append(make_span(" ", []))
+            spans.extend(p_spans)
+        return spans
 
 
 def _run_text(r_elem: ET.Element) -> str:
