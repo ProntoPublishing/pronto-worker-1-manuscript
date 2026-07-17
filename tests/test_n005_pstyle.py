@@ -95,6 +95,8 @@ _DOC_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <w:p><w:pPr><w:pStyle w:val="Title"/><w:jc w:val="center"/></w:pPr>
    <w:r><w:t>Explicitly Centered Title</w:t></w:r></w:p>
   <w:p><w:r><w:t>Plain body paragraph.</w:t></w:r></w:p>
+  <w:p><w:pPr><w:pStyle w:val="BlockText"/></w:pPr>
+   <w:r><w:t>A graft is a wound you make on purpose.</w:t></w:r></w:p>
  </w:body>
 </w:document>
 """
@@ -132,6 +134,15 @@ class TestPStyleSynthesis(unittest.TestCase):
 
         body = texts["Plain body paragraph."]
         self.assertNotIn("centered", body.get("style_tags") or [])
+
+    def test_blocktext_maps_to_blockquote(self):
+        """5.3.1: pandoc's BlockText paragraph style is a blockquote
+        (Book 18 epigraphs arrived as plain body prose without it)."""
+        blocks, _ = extract_docx(self.docx)
+        bq = [b for b in blocks if b["type"] == "blockquote"]
+        self.assertEqual(len(bq), 1)
+        self.assertIn("wound you make on purpose",
+                      "".join(s["text"] for s in bq[0]["spans"]))
 
     def test_dedupe_merge_with_explicit_attributes(self):
         blocks, _ = extract_docx(self.docx)
