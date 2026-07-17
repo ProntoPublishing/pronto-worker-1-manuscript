@@ -413,7 +413,12 @@ def _paragraph_style(p_elem: ET.Element) -> Dict[str, Any]:
                 if 1 <= lvl <= 6:
                     out["heading_level"] = lvl
             lv = style_val.lower() if style_val else ""
-            if lv in ("quote", "quotation", "intensequote", "blockquote"):
+            # "blocktext" is pandoc's blockquote paragraph style
+            # (Book 18 epigraphs, 5.3.1) — Word's own are quote /
+            # intensequote; "quotation"/"blockquote" cover other
+            # converters.
+            if lv in ("quote", "quotation", "intensequote", "blockquote",
+                      "blocktext"):
                 out["is_blockquote"] = True
             if lv in (
                 "code", "codeblock", "sourcecode", "preformatted",
