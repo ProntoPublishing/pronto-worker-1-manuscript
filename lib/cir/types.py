@@ -53,6 +53,7 @@ def make_block(
     preformatted: bool = False,
     footnote_ref: Optional[str] = None,
     source_paragraph_id: Optional[str] = None,
+    figure: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build a CIR block, enforcing shape at construction.
 
@@ -88,6 +89,10 @@ def make_block(
         block["footnote_ref"] = footnote_ref
     if source_paragraph_id is not None:
         block["source_paragraph_id"] = source_paragraph_id
+    if figure is not None:
+        if type != "image":
+            raise ValueError("figure is only valid on type=image")
+        block["figure"] = figure
     return block
 
 

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from uuid import uuid4
 
-SCHEMA_VERSION = "2.1"
+SCHEMA_VERSION = "2.2"
 
 
 def build_artifact(

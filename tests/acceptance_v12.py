@@ -54,7 +54,7 @@ def run_book(path: Path):
     ctx = RuleContext(blocks=[], intake_metadata=None)
     factory_args = {"source_path": str(path)}
     run_phase("ingest", ctx, factory_args=factory_args)
-    blocks, _ = extract_docx(str(path))
+    blocks, _, _fm = extract_docx(str(path))
     ctx.blocks = blocks
     for phase in ("strip", "classify", "normalize", "validate", "emit"):
         run_phase(phase, ctx, factory_args=factory_args)

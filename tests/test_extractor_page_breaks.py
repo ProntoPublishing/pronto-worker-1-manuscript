@@ -71,7 +71,7 @@ class _DocxCase(unittest.TestCase):
                 "word/document.xml",
                 _DOC_TEMPLATE.format(body="\n".join(body_lines)),
             )
-        blocks, _ = extract_docx(docx)
+        blocks, _, _fm = extract_docx(docx)
         return blocks
 
 

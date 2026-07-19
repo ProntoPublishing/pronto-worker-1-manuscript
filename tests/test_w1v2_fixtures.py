@@ -36,7 +36,7 @@ from lib.emit import (  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = REPO_ROOT / "tests" / "fixtures" / "v1"
-SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.1.schema.json"
+SCHEMA_PATH = REPO_ROOT / "manuscript" / "manuscript.v2.2.schema.json"
 
 WORKER_VERSION = "5.3.1-a1"  # rules-1.2 pre-release (+ break observation, footnotes, blocktext)
 RULES_VERSION = "1.2"
@@ -74,7 +74,7 @@ def _process_fixture(
 
     # Only actually extract if R-001 didn't reject.
     if path.suffix.lower() == ".docx":
-        blocks, extra_source_meta = extract_docx(path)
+        blocks, extra_source_meta, _fm = extract_docx(path)
         ctx.blocks = blocks
         source_meta.update(extra_source_meta)
 
@@ -159,7 +159,7 @@ class Test_R001_UnsupportedFormat(BaseFixtureTest):
         )
         self.assertEqual(
             key,
-            "services/TALLY-8F3Q/INTFMT/manuscript/v2.1/w5.3.1-a1-r1.2/manuscript.json",
+            "services/TALLY-8F3Q/INTFMT/manuscript/v2.2/w5.3.1-a1-r1.2/manuscript.json",
         )
 
 
@@ -172,7 +172,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
 
     def test_c001_chapter_newline_title_extracts(self):
         path = self._fixture("c001_chapter_newline_title.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         self.assertTrue(any(b["type"] == "heading" and b.get("heading_level") == 2 for b in blocks),
                         "Heading2 block missing")
         # The chapter heading text has a literal line break between runs.
@@ -184,7 +184,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
 
     def test_c003_author_title_page_carries_style_tags(self):
         path = self._fixture("c003_author_title_page.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         # First three blocks are the title cluster. All must be centered.
         # Title and subtitle must also carry large_font (≥1.5× body size).
         # The author byline (14pt against 11pt body = 1.27×) is below the
@@ -204,7 +204,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
         blocks with the original whitespace intact.
         """
         path = self._fixture("n001_double_spaces.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         joined = " ".join(
             "".join(s["text"] for s in b.get("spans", []))
             for b in blocks
@@ -217,7 +217,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
         extractor. The w:ins text is included; w:del text is dropped.
         """
         path = self._fixture("n002_tracked_changes.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         joined = " ".join(
             "".join(s["text"] for s in b.get("spans", []))
             for b in blocks
@@ -231,7 +231,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
         does that in the strip phase.
         """
         path = self._fixture("n003_zwsp_nbsp_hacks.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         joined = " ".join(
             "".join(s["text"] for s in b.get("spans", []))
             for b in blocks
@@ -241,7 +241,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
 
     def test_c002_part_newline_title_extracts(self):
         path = self._fixture("c002_part_newline_title.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         self.assertTrue(any(b["type"] == "heading" and b.get("heading_level") == 1 for b in blocks),
                         "Heading1 (part divider candidate) missing")
 
@@ -251,7 +251,7 @@ class Test_Extractor_Smoke(BaseFixtureTest):
         extension, exercised via the full pipeline in Test_N001_*.
         """
         path = self._fixture("n001_double_spaces.docx")
-        blocks, _ = extract_docx(path)
+        blocks, _, _fm = extract_docx(path)
         streaks = _count_consecutive_empty_line_runs(blocks)
         self.assertGreaterEqual(
             streaks["max"], 2,

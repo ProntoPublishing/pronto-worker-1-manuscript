@@ -60,7 +60,7 @@ def run_book(path: Path, intake=None):
         run_phase("ingest", ctx, factory_args=factory_args)
     except RuleRejectException as e:
         raise SystemExit(f"{path.name}: REJECTED by {e.rule_id}: {e.message}")
-    blocks, _ = extract_docx(str(path))
+    blocks, _, _fm = extract_docx(str(path))
     ctx.blocks = blocks
     for phase in ("strip", "classify", "normalize", "validate", "emit"):
         run_phase(phase, ctx, factory_args=factory_args)

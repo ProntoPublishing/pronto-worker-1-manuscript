@@ -74,7 +74,7 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.3.2-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
+WORKER_VERSION = "5.4.0-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
                               # final when the V-006 training wheels come
                               # off (medium -> info).
                               # (5.2.1: extractor records manual page breaks
@@ -228,8 +228,35 @@ class ManuscriptProcessor:
 
             # 6. Extract DOCX → CIR. (N-002 tracked-change acceptance
             # happens inside the extractor.)
-            blocks, extra_source = extract_docx(file_path)
+            blocks, extra_source, figures_media = extract_docx(file_path)
             ctx.blocks = blocks
+
+            # E3 2a (5.4.0-a1): upload embedded figure media to R2 and
+            # stamp each figure node with its key + sha256 BEFORE the
+            # remaining phases (the emit-side schema v2.2 validates the
+            # figure object). Media that fails to upload FAILs the run
+            # — a figure node pointing nowhere is unrecoverable input
+            # for the chain.
+            if figures_media:
+                import hashlib as _hl
+                for b in ctx.blocks:
+                    fig = b.get("figure")
+                    if not fig:
+                        continue
+                    name = fig.get("media_name")
+                    data = figures_media.get(name)
+                    if data is None:
+                        raise RuntimeError(
+                            f"figure block {b.get('id')} references "
+                            f"{name!r} but no media bytes were extracted")
+                    key = (f"projects/{intake_submission_id}/figures/"
+                           f"{name.split('/')[-1]}")
+                    self.r2_client.upload_bytes(key, data)
+                    fig["image_key"] = key
+                    fig["sha256"] = _hl.sha256(data).hexdigest()
+                logger.info(
+                    f"[{run_id}] uploaded {len(figures_media)} embedded "
+                    f"figure(s) to projects/{intake_submission_id}/figures/")
 
             # 7. Run the remaining phases (strip → classify → normalize →
             # validate → emit). Terminal default lands at the end of

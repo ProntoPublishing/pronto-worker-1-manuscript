@@ -121,7 +121,7 @@ class TestPStyleSynthesis(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_synthesis_table(self):
-        blocks, _ = extract_docx(self.docx)
+        blocks, _, _fm = extract_docx(self.docx)
         texts = {"".join(s["text"] for s in b["spans"]): b for b in blocks}
 
         title = texts["Pride and Prejudice"]
@@ -138,14 +138,14 @@ class TestPStyleSynthesis(unittest.TestCase):
     def test_blocktext_maps_to_blockquote(self):
         """5.3.1: pandoc's BlockText paragraph style is a blockquote
         (Book 18 epigraphs arrived as plain body prose without it)."""
-        blocks, _ = extract_docx(self.docx)
+        blocks, _, _fm = extract_docx(self.docx)
         bq = [b for b in blocks if b["type"] == "blockquote"]
         self.assertEqual(len(bq), 1)
         self.assertIn("wound you make on purpose",
                       "".join(s["text"] for s in bq[0]["spans"]))
 
     def test_dedupe_merge_with_explicit_attributes(self):
-        blocks, _ = extract_docx(self.docx)
+        blocks, _, _fm = extract_docx(self.docx)
         texts = {"".join(s["text"] for s in b["spans"]): b for b in blocks}
         explicit = texts["Explicitly Centered Title"]
         tags = explicit.get("style_tags") or []

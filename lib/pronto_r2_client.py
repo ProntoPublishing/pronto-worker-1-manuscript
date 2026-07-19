@@ -226,3 +226,17 @@ class ProntoR2Client:
     def _compute_hash(self, data: bytes) -> str:
         """Compute SHA-256 hash of data."""
         return f"sha256:{hashlib.sha256(data).hexdigest()}"
+
+    # --- E3 addition (2026-07-20): raw bytes upload for figure media ------
+    def upload_bytes(self, object_key: str, data: bytes,
+                     content_type: str = "application/octet-stream"):
+        """Upload raw bytes (embedded figure media)."""
+        ext = object_key.rsplit(".", 1)[-1].lower()
+        ct = {"png": "image/png", "jpg": "image/jpeg",
+              "jpeg": "image/jpeg", "tif": "image/tiff",
+              "tiff": "image/tiff", "gif": "image/gif"}.get(ext, content_type)
+        self.s3_client.put_object(Bucket=self.bucket_name, Key=object_key,
+                                  Body=data, ContentType=ct)
+        url = (f"{self.public_base_url}/{object_key}"
+               if self.public_base_url else None)
+        return {"object_key": object_key, "public_url": url}

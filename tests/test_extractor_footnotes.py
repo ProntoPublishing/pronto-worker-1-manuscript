@@ -87,7 +87,7 @@ class _DocxCase(unittest.TestCase):
                     "word/footnotes.xml",
                     _FOOTNOTES_TEMPLATE.format(notes="\n".join(note_lines)),
                 )
-        blocks, _ = extract_docx(docx)
+        blocks, _, _fm = extract_docx(docx)
         return blocks
 
     @staticmethod

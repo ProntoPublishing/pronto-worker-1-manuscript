@@ -51,6 +51,11 @@ from .types import make_block, make_span, STYLE_TAGS
 # OOXML namespaces we care about.
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 NS = {"w": W}
+# E3 2a (5.4.0-a1): drawing/relationship namespaces for embedded images.
+A = "http://schemas.openxmlformats.org/drawingml/2006/main"
+R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+WP = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+PKG_R = "http://schemas.openxmlformats.org/package/2006/relationships"
 
 
 class BlockIdGenerator:
@@ -68,7 +73,10 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
     """Extract CIR blocks from a DOCX file.
 
     Returns:
-        (blocks, source_meta). Blocks are in document order. source_meta
+        (blocks, source_meta, figures_media). Blocks are in document
+        order; figures_media maps media_name -> raw bytes for every
+        embedded image an emitted figure block references (E3 2a).
+        source_meta
         carries the fields the v2.0 schema expects under `source` (plus a
         few extras the emit layer may filter out).
     """
@@ -86,11 +94,27 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
             footnotes_xml = z.read("word/footnotes.xml").decode("utf-8")
         except KeyError:
             footnotes_xml = None
+        # E3 2a: relationships + embedded media. Degrades to no-figures
+        # on any malformation — never a crash.
+        rels: Dict[str, str] = {}
+        media: Dict[str, bytes] = {}
+        try:
+            rels_xml = z.read("word/_rels/document.xml.rels").decode("utf-8")
+            for rel in ET.fromstring(rels_xml):
+                rid = rel.get("Id")
+                target = rel.get("Target") or ""
+                if rid and target.startswith("media/"):
+                    rels[rid] = target
+            for name in z.namelist():
+                if name.startswith("word/media/"):
+                    media[name[len("word/"):]] = z.read(name)
+        except Exception:
+            rels, media = {}, {}
 
     root = ET.fromstring(doc_xml)
     body = root.find("w:body", NS)
     if body is None:
-        return [], _empty_source_meta(file_path)
+        return [], _empty_source_meta(file_path), {}
 
     ids = BlockIdGenerator()
     blocks: List[Dict[str, Any]] = []
@@ -137,6 +161,49 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
                 # Lone-break paragraph, or break after this paragraph's
                 # content: the next content block starts the new page.
                 pending_break = True
+            # E3 2a: embedded images ride in w:drawing/a:blip runs.
+            # Caption convention: a directly-following paragraph styled
+            # `Caption` attaches to the figure instead of the body (the
+            # paragraph was already emitted above — reassign its text).
+            for blip in element.iter(f"{{{A}}}blip"):
+                rid = blip.get(f"{{{R}}}embed")
+                target = rels.get(rid or "")
+                if not target or target not in media:
+                    continue
+                alt = None
+                for doc_pr in element.iter(f"{{{WP}}}docPr"):
+                    alt = doc_pr.get("descr") or doc_pr.get("name") or None
+                    break
+                blocks.append(make_block(
+                    id=ids.next(),
+                    type="image",
+                    figure={
+                        "media_name": target,
+                        "alt": alt,
+                        "caption": None,
+                        "credit": None,
+                        "acquisition_class": "customer_supplied",
+                        "rights_basis": "author manuscript submission "
+                                        "(docx-embedded)",
+                    },
+                    source={"note": f"embedded image {target} "
+                                    f"(rel {rid})"},
+                ))
+                if pending_break:
+                    blocks[-1]["force_page_break"] = True
+                    pending_break = False
+            if (blocks and blocks[-1].get("type") != "image"
+                    and len(blocks) >= 2
+                    and blocks[-2].get("type") == "image"
+                    and _paragraph_style_is_caption(element)):
+                last = blocks[-1]
+                cap_text = (last.get("text")
+                            or "".join(s.get("text", "")
+                                       for s in last.get("spans") or [])
+                            ).strip()
+                if cap_text and blocks[-2].get("figure") is not None:
+                    blocks[-2]["figure"]["caption"] = cap_text
+                    blocks.pop()   # the caption is figure metadata, not body
         elif tag == "tbl":
             # Placeholder — real table extraction lands in a later iteration.
             blocks.append(make_block(
@@ -156,6 +223,11 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
     # as they appear in the source; N-001 in the strip phase collapses
     # runs of 2+ into one.
 
+    figures_media = {name: data for name, data in media.items()
+                     if any(b.get("type") == "image"
+                            and (b.get("figure") or {}).get("media_name") == name
+                            for b in blocks)}
+
     source_meta = {
         "original_filename": file_path.name,
         "original_format": "docx",
@@ -163,7 +235,7 @@ def extract_docx(file_path: str | Path) -> Tuple[List[Dict[str, Any]], Dict[str,
         # source_hash_sha256 + ingested_at are set by the caller, not by
         # the extractor — those are outer pipeline concerns.
     }
-    return blocks, source_meta
+    return blocks, source_meta, figures_media
 
 
 # ---------------------------------------------------------------------------
@@ -868,3 +940,13 @@ def _empty_source_meta(file_path: Path) -> Dict[str, Any]:
         "original_format": "docx",
         "original_file_size_bytes": file_path.stat().st_size,
     }
+
+
+def _paragraph_style_is_caption(element) -> bool:
+    """E3 2a: True when the paragraph's pStyle is Word's Caption style
+    (the convention that binds a caption to the figure above it)."""
+    p_style = element.find("w:pPr/w:pStyle", NS)
+    if p_style is None:
+        return False
+    val = (p_style.get(f"{{{W}}}val") or "").strip().lower()
+    return val == "caption"
