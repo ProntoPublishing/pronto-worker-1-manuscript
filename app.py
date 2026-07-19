@@ -46,18 +46,29 @@ def process():
         "service_id": "recXXXXXXXXXXXXXX"
     }
     """
+    # Doc 08 secret contract (retrofit 2026-07-19): 503 when the server
+    # has no secret configured, 401 on missing or wrong header. Same
+    # gap as W2 — the header was never checked.
+    secret = os.getenv('WEBHOOK_SECRET')
+    if not secret:
+        logger.error("WEBHOOK_SECRET is not configured")
+        return jsonify({'success': False,
+                        'error': 'Server missing WEBHOOK_SECRET configuration'}), 503
+    if request.headers.get('X-Webhook-Secret') != secret:
+        return jsonify({'success': False, 'error': 'Invalid webhook secret'}), 401
+
     try:
         data = request.get_json()
-        
+
         if not data or 'service_id' not in data:
             return jsonify({
                 'success': False,
                 'error': 'Missing service_id in request body'
             }), 400
-        
+
         service_id = data['service_id']
         logger.info(f"Processing service: {service_id}")
-        
+
         # Initialize processor and process service
         processor = ManuscriptProcessor()
         result = processor.process_service(service_id)

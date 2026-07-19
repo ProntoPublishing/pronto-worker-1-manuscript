@@ -74,7 +74,7 @@ from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.3.1-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
+WORKER_VERSION = "5.3.2-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
                               # final when the V-006 training wheels come
                               # off (medium -> info).
                               # (5.2.1: extractor records manual page breaks
