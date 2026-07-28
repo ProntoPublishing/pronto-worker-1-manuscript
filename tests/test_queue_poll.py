@@ -35,9 +35,8 @@ class TestQueuePoll(unittest.TestCase):
 
     def test_arm_state_default(self):
         app = self._app()
-        # W1 ships DISARMED: stale Paid+Met MANUSCRIPT backlog at
-        # conversion time (8Najakz). Env flip arms it.
-        self.assertEqual(app.QUEUE_POLL_DEFAULT, 'false')
+        # ARMED since 2026-07-28 (stale backlog dispositioned).
+        self.assertEqual(app.QUEUE_POLL_DEFAULT, 'true')
         with patch.dict(os.environ, {"QUEUE_POLL_ENABLED": "TRUE"}):
             self.assertTrue(app._queue_poll_enabled())
         with patch.dict(os.environ, {"QUEUE_POLL_ENABLED": "yes"}):

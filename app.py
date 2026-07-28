@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Queue poller arm state (order 9N2x9xK). W1 ships DISARMED: the
-# MANUSCRIPT lane had stale Paid+Met backlog at conversion time
-# (8Najakz-MANUSCRIPT, Apr) — flip env QUEUE_POLL_ENABLED=true after
-# disposition to arm without a code change. Exactly 'true' arms.
-QUEUE_POLL_DEFAULT = 'false'
+# Queue poller arm state (order 9N2x9xK). ARMED by default since
+# 2026-07-28: the stale Paid+Met backlog (8Najakz-MANUSCRIPT) was
+# dispositioned to Pending at the mapping sitting. Exactly 'true'
+# arms; env QUEUE_POLL_ENABLED overrides either way.
+QUEUE_POLL_DEFAULT = 'true'
 
 
 def _queue_poll_enabled():
