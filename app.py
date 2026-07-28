@@ -13,6 +13,7 @@ Endpoints:
 import os
 import json
 import logging
+import threading
 from flask import Flask, request, jsonify
 from pronto_worker_1 import ManuscriptProcessor
 
@@ -25,6 +26,33 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# Queue poller arm state (order 9N2x9xK). W1 ships DISARMED: the
+# MANUSCRIPT lane had stale Paid+Met backlog at conversion time
+# (8Najakz-MANUSCRIPT, Apr) — flip env QUEUE_POLL_ENABLED=true after
+# disposition to arm without a code change. Exactly 'true' arms.
+QUEUE_POLL_DEFAULT = 'false'
+
+
+def _queue_poll_enabled():
+    return os.getenv('QUEUE_POLL_ENABLED',
+                     QUEUE_POLL_DEFAULT).lower() == 'true'
+
+
+def _list_ready_services(processor):
+    """Queue-poll doorbell (order 9N2x9xK, W6 Finding-7 pattern):
+    MANUSCRIPT services at Status=Paid with dependencies Met. W1 has
+    no lib client — the query rides the processor's Services table.
+    Returns [(record_id, fields), ...]."""
+    formula = ("AND({Status}='Paid', {Met}=1, "
+               "FIND('-MANUSCRIPT', {Service Instance ID}))")
+    try:
+        records = processor.services_table.all(formula=formula)
+    except Exception as e:
+        logger.error(f"queue poll failed: {e}")
+        return []
+    return [(r["id"], r.get("fields", {})) for r in records]
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
@@ -34,6 +62,7 @@ def health():
         'service': 'worker_1_manuscript_processor',
         'version': WORKER_VERSION,
         'rules_version': RULES_VERSION,
+        'queue_poll': _queue_poll_enabled(),
     })
 
 @app.route('/process', methods=['POST'])
@@ -84,6 +113,47 @@ def process():
             'success': False,
             'error': str(e)
         }), 500
+
+# ---------------------------------------------------------------------------
+# Order 9N2x9xK: the QUEUE POLLER — W6's Finding-7 doorbell, fleet-wide.
+# Every QUEUE_POLL_SECONDS, pick up any MANUSCRIPT service at Status=Paid
+# with Met=1 and run it through process_service, which enforces its own
+# already-Complete/Processing guard + claim; a concurrent POST claim
+# flips Status first and the loser no-ops.
+# ---------------------------------------------------------------------------
+
+def _queue_poller():
+    interval = int(os.getenv('QUEUE_POLL_SECONDS', '120'))
+    import time
+    time.sleep(15)                       # let boot settle
+    logger.info(f"queue poller up: every {interval}s "
+                f"(Status=Paid + Met=1 + -MANUSCRIPT)")
+    processor = None
+    while True:
+        try:
+            if processor is None:
+                processor = ManuscriptProcessor()
+            ready = _list_ready_services(processor)
+            for service_id, fields in ready:
+                instance = fields.get('Service Instance ID', service_id)
+                logger.info(f"queue poll: picking up {instance} "
+                            f"({service_id})")
+                result = processor.process_service(service_id)
+                logger.info(f"queue poll: {instance} -> "
+                            f"{result.get('status', result)}")
+        except Exception:
+            logger.exception("queue poller iteration failed")
+            processor = None             # rebuild clients next round
+        time.sleep(interval)
+
+
+if _queue_poll_enabled():
+    threading.Thread(target=_queue_poller, daemon=True,
+                     name="queue-poller").start()
+else:
+    logger.info("queue poller present but DISARMED "
+                "(set QUEUE_POLL_ENABLED=true to arm)")
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8080))
