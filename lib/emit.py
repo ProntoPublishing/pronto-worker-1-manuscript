@@ -36,6 +36,7 @@ def build_artifact(
     processing_time_seconds: Optional[float] = None,
     dry_run: bool = False,
     manuscript_meta: Optional[Dict[str, Any]] = None,
+    front_matter: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Assemble the top-level v2.0 artifact object.
 
@@ -76,6 +77,13 @@ def build_artifact(
         artifact["processing"]["dry_run"] = True
     if manuscript_meta is not None:
         artifact["manuscript_meta"] = manuscript_meta
+    # Front-Matter Contract v1: the declarative summary of what the
+    # MANUSCRIPT carries, so W2 can suppress its generators for
+    # author-made elements. Additive and optional — an artifact without
+    # it is byte-identical to pre-contract output, which keeps this
+    # deployable ahead of W2's respect half.
+    if front_matter is not None:
+        artifact["front_matter"] = front_matter
     return artifact
 
 

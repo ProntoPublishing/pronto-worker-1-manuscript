@@ -1183,6 +1183,192 @@ class C008_PatternOnlyLandmarks:
 
 
 # ---------------------------------------------------------------------------
+# C-009: headless front-matter shape detection (Front-Matter Contract v1,
+# amendment A1 + C's epigraph guard, 2026-07-28)
+# ---------------------------------------------------------------------------
+#
+# THE PATHOLOGY (V-007, the Swallow's v1): a centered, HEADINGLESS
+# dedication ("For everyone who ever hit send too late…") sits right
+# after the title cluster. The docx→JSON extraction dropped the page
+# break between them, so C-003 (title-page detection, order 8) scores
+# the dedication centered+early = 2 signals and ABSORBS it into the
+# title cluster — "5 title_page blocks, b_000001..b_000006", the
+# dedication swallowed. C-004 can't save it: C-004 is heading-only, and
+# this dedication has no heading.
+#
+# THE FIX: run a SHAPE detector BEFORE C-003 that stamps role on the
+# headless dedication/epigraph first. C-003 line ~640 `if _has_role(b):
+# continue` then skips it out of the title cluster, leaving title_page
+# and dedication as DISJOINT block ranges (contract case 1).
+#
+# CONSERVATIVE by mandate (C's guard #2): a match requires the block to
+# be short, standalone, in the pre-body front window, AND carry a
+# distinctive shape ("For…/To…" for dedications; a quotation and/or a
+# following attribution for epigraphs). It can never eat a genuine
+# centered opening line of body prose — those are long (window closes
+# on the first ≥200-char paragraph) or sit after a chapter landmark.
+# Anything ambiguous is left untouched (contract case 7, the tripwire).
+# Epigraph gets its own detector because it shares the exact absorption
+# risk (short, standalone, headless, centered) and stays its own class.
+
+_C009_DEDICATION_RE = re.compile(r"^(for|to)\b", re.IGNORECASE)
+_C009_ATTRIBUTION_RE = re.compile(r"^[—–\-]{1,2}\s*\S")   # "— Name"
+_C009_QUOTE_OPENERS = ("\"", "“", "‘", "«", "'")
+_C009_QUOTE_CLOSERS = ("\"", "”", "’", "»")
+# Copyright shape (A3): highly distinctive, and deliberately checked
+# BEFORE the shortness gate — a real copyright page runs long (rights
+# statement + ISBN + edition lines) and must neither be missed nor be
+# mistaken for the body paragraph that closes the front window.
+_C009_COPYRIGHT_RE = re.compile(
+    r"(©|\bcopyright\b|all rights reserved)", re.IGNORECASE)
+
+
+class C009_HeadlessFrontMatterShape:
+    """C-009 — headless dedication/epigraph shape, BEFORE C-003.
+
+    Catches the front-matter elements C-004 (heading-only) misses and
+    C-003 would otherwise swallow into the title cluster. Emits the
+    C-004 vocabulary (role="front_matter" + subtype) so the downstream
+    front-matter surface is uniform and C-003 skips these blocks by
+    I-10 non-overwrite.
+    """
+
+    id = "C-009"
+    phase = "classify"
+    order = 8            # after C-005 (7), strictly before C-003 (now 9)
+    version = "v1"
+
+    _SHAPE_MAX_CHARS = 200      # matches C-003's shape gate
+
+    def run(self, ctx: RuleContext) -> None:
+        blocks = ctx.blocks
+        # Repeated-title map, for the half-title shape (A2). Built over
+        # the front region only — a title repeated deep in the body
+        # (Frankenstein's volume pages) is C-002's business, not ours,
+        # and the window below never reaches it.
+        seen_text_counts: Dict[str, int] = {}
+        for b in blocks:
+            if b.get("role") in ("chapter_heading", "part_divider"):
+                break
+            t = normalize_ws(_block_text(b))
+            if not t:
+                continue
+            if len(t) >= self._SHAPE_MAX_CHARS:
+                break
+            seen_text_counts[t] = seen_text_counts.get(t, 0) + 1
+        claimed_half_title: Set[str] = set()
+
+        content_seen = 0
+        for i, b in enumerate(blocks):
+            role = b.get("role")
+            # A chapter/part landmark ends the front-matter zone hard.
+            if role in ("chapter_heading", "part_divider"):
+                return
+            text = normalize_ws(_block_text(b))
+            if not text:
+                continue
+            content_seen += 1
+
+            # --- copyright page (A3): checked BEFORE the shortness gate,
+            # because a real copyright page is long and would otherwise
+            # both close the window and go unclaimed. W2's cross-check
+            # matrix keys off this class.
+            if not _has_role(b) and b.get("type") in ("paragraph", "heading") \
+                    and _C009_COPYRIGHT_RE.search(text):
+                b["role"] = "front_matter"
+                b["subtype"] = "copyright"
+                _add_note(
+                    b,
+                    "C-009: copyright page caught by shape (©/copyright/"
+                    "all-rights-reserved, pre-body) — W2 cross-checks it "
+                    "rather than generating one (Front-Matter Contract A3)",
+                )
+                continue
+
+            # First sustained body paragraph closes the window: front
+            # matter is over, and a long paragraph is never a headless
+            # dedication/epigraph. (Single long paragraph is enough —
+            # dedications/epigraphs are short by construction.)
+            if len(text) >= self._SHAPE_MAX_CHARS:
+                return
+            if _has_role(b):
+                continue
+            if b.get("type") not in ("paragraph", "heading"):
+                continue
+            if not any(ch.isalnum() for ch in text):
+                continue  # ornaments are not front-matter text
+
+            # --- half title (A2): a page carrying ONLY the title, before
+            # the full title page. Detected as the FIRST of a repeated
+            # short line in the front region: the later occurrence is the
+            # real title page (it gains the author line), this one is the
+            # half title. Its own class, pass-through — folding it into
+            # title_page would make W2 suppress the REAL title page and
+            # ship a bare half-title in its place.
+            if (seen_text_counts.get(text, 0) >= 2
+                    and text not in claimed_half_title):
+                claimed_half_title.add(text)
+                b["role"] = "front_matter"
+                b["subtype"] = "half_title"
+                _add_note(
+                    b,
+                    "C-009: half title caught by shape (title line repeated "
+                    "later in the front matter; this is the first "
+                    "occurrence) — kept its own class so the real title "
+                    "page still generates/ships (Contract A2)",
+                )
+                continue
+
+            # --- dedication: "For…/To…", short, standalone, and NOT the
+            # document's first content block (a title leads; this keeps
+            # a book's genuine opening "For years, she waited." — which
+            # would be block #1 only if there is no title page — from
+            # being mistaken, and such a line is body prose anyway).
+            if content_seen > 1 and _C009_DEDICATION_RE.match(text):
+                b["role"] = "front_matter"
+                b["subtype"] = "dedication"
+                _add_note(
+                    b,
+                    "C-009: headless dedication caught by shape "
+                    "('For…/To…', short, standalone, pre-body) — kept "
+                    "out of the title cluster (V-007 fix)",
+                )
+                continue
+
+            # --- epigraph: a quotation and/or a following attribution
+            # line. Its own class per the contract; shares the title-
+            # cluster absorption risk, so it must be claimed here too.
+            if self._is_epigraph(text, blocks, i):
+                b["role"] = "front_matter"
+                b["subtype"] = "epigraph"
+                _add_note(
+                    b,
+                    "C-009: headless epigraph caught by shape "
+                    "(quotation / attribution, pre-body) — kept out of "
+                    "the title cluster",
+                )
+                continue
+            # Anything else in the window is left untouched — C-003 and
+            # the terminal default decide it (contract case 7 tripwire).
+
+    def _is_epigraph(self, text, blocks, i) -> bool:
+        quoted = text.startswith(_C009_QUOTE_OPENERS) or \
+            text.endswith(_C009_QUOTE_CLOSERS)
+        # An attribution on the NEXT short content block ("— Wren
+        # Calloway") corroborates even an unquoted epigraph line.
+        attributed = False
+        for j in range(i + 1, min(i + 3, len(blocks))):
+            nxt = normalize_ws(_block_text(blocks[j]))
+            if not nxt:
+                continue
+            if len(nxt) < self._SHAPE_MAX_CHARS and \
+                    _C009_ATTRIBUTION_RE.match(nxt):
+                attributed = True
+            break
+        return quoted or attributed
+
+
+# ---------------------------------------------------------------------------
 # Shared index helpers
 # ---------------------------------------------------------------------------
 

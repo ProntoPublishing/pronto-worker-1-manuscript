@@ -30,6 +30,7 @@ from .classification import (
     C006_ChapterSubtitle,
     C007_SourceTocDetection,
     C008_PatternOnlyLandmarks,
+    C009_HeadlessFrontMatterShape,
 )
 from .validation import (
     V001_ChapterNumberContinuity,
@@ -73,7 +74,12 @@ RULE_REGISTRY: List[Dict[str, object]] = [
     {"id": "C-006", "phase": "classify",  "order": 5, "factory": C006_ChapterSubtitle},
     {"id": "C-004", "phase": "classify",  "order": 6, "factory": C004_FrontMatter},
     {"id": "C-005", "phase": "classify",  "order": 7, "factory": C005_BackMatter},
-    {"id": "C-003", "phase": "classify",  "order": 8, "factory": C003_TitlePage},
+    # C-009 (Front-Matter Contract v1, A1): headless dedication/epigraph
+    # shape detection MUST run before C-003 so title-page detection skips
+    # the blocks it stamps (I-10 non-overwrite) — keeps title_page and
+    # dedication as disjoint block ranges. Fixes the V-007 absorption.
+    {"id": "C-009", "phase": "classify",  "order": 8, "factory": C009_HeadlessFrontMatterShape},
+    {"id": "C-003", "phase": "classify",  "order": 9, "factory": C003_TitlePage},
 
     {"id": "N-004", "phase": "normalize", "order": 1, "factory": N004_QuoteNormalization},
 

@@ -67,6 +67,7 @@ from lib.pipeline import run_all_phases
 from lib.rules.base import RuleContext
 from lib.rules.rejection import RuleRejectException
 from lib.emit import build_artifact, versioned_key, compute_source_hash, SCHEMA_VERSION
+from lib.front_matter import build_front_matter_section
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +294,7 @@ class ManuscriptProcessor:
                 processed_at=finished_at,
                 processing_time_seconds=(finished_at - started_at).total_seconds(),
                 manuscript_meta=ctx.manuscript_meta,
+                front_matter=build_front_matter_section(ctx.blocks),
             )
 
             # 9. Fault-threshold policy decides Complete vs Failed.
@@ -419,8 +421,13 @@ class ManuscriptProcessor:
                 if bm_links:
                     bm = self.book_metadata_table.get(bm_links[0])
                     f = bm.get("fields", {})
-                    title  = f.get("Book Title") or f.get("Title")
-                    author = f.get("Author Name") or f.get("Author")
+                    # Pinned to canonical Airtable field names 2026-07-28
+                    # (fidelity pass): were `Book Title`-or-`Title` /
+                    # `Author Name`-or-`Author` best-guess aliases; the
+                    # schema is settled and the whole fleet reads the
+                    # canonical names, so the alias fallbacks are gone.
+                    title  = f.get("Book Title")
+                    author = f.get("Author Name")
                     subtitle = f.get("Subtitle")
                     if title or author:
                         return {
@@ -431,10 +438,11 @@ class ManuscriptProcessor:
             except Exception as e:
                 logger.warning(f"Book Metadata lookup failed, falling back: {e}")
 
-        # 2. Fallback: Service-record fields directly.
+        # 2. Fallback: Service-record fields directly (canonical names
+        # only, pinned 2026-07-28 — the Title/Author aliases are gone).
         f = service.get("fields", {})
-        title  = f.get("Book Title") or f.get("Title")
-        author = f.get("Author Name") or f.get("Author")
+        title  = f.get("Book Title")
+        author = f.get("Author Name")
         if title or author:
             return {"title": title or None, "subtitle": None, "author": author or None}
         return None
