@@ -75,7 +75,7 @@ from lib.front_matter import build_front_matter_section
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.5.0-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
+WORKER_VERSION = "5.5.1-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
                               # final when the V-006 training wheels come
                               # off (medium -> info).
                               # (5.2.1: extractor records manual page breaks
@@ -509,6 +509,15 @@ class ManuscriptProcessor:
             "Started At": datetime.now(timezone.utc).isoformat(),
             "Worker Version": WORKER_VERSION,
             "Rules Version": RULES_VERSION,
+            # Stale-state hygiene (sanctioned 2026-08-10): a claim
+            # supersedes the previous run, so that run's verdict must not
+            # survive underneath this one. Blocked additionally feeds the
+            # Blocked Services rollup that delivery views read, so
+            # staleness here can hold an order, not merely mislead a
+            # reader. A re-hold re-sets both at the terminal write.
+            "Error Log": "",
+            "Blocked": False,
+            "Blocked Reason": "",
         })
         logger.info(f"Claimed service {service_id}: Status → Processing")
 
