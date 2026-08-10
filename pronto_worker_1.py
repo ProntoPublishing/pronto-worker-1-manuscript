@@ -75,7 +75,7 @@ from lib.front_matter import build_front_matter_section
 # ---------------------------------------------------------------------------
 
 WORKER_NAME = "worker_1_manuscript_processor"
-WORKER_VERSION = "5.5.1-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
+WORKER_VERSION = "5.5.2-a1"   # SemVer 2.0 pre-release. Cut the non-"-a1"
                               # final when the V-006 training wheels come
                               # off (medium -> info).
                               # (5.2.1: extractor records manual page breaks
@@ -194,6 +194,15 @@ class ManuscriptProcessor:
             if current_status == "Processing":
                 logger.info(f"[{run_id}] Service {service_id} already Processing — skip to avoid race")
                 return {"success": True, "status": "already_processing",
+                        "service_id": service_id}
+            # Void is terminal (sanctioned 2026-08-10). A voided line has
+            # been closed out with a money disposition recorded; re-running
+            # it would resurrect work the house has already settled. The
+            # poller never reaches here (it polls Status=Paid), so this
+            # guards the operator POST.
+            if current_status == "Void":
+                logger.info(f"[{run_id}] Service {service_id} is Void — skip")
+                return {"success": True, "status": "voided",
                         "service_id": service_id}
 
             # 2. Claim.
